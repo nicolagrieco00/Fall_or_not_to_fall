@@ -10,6 +10,10 @@ The dataset is built in this way:
 
 Classes of falls:
 
->- fall -> it's a grave fall;
->- fall-light -> caduta leggera;
->- 
+>- fall -> grave fall;
+>- rfall -> grave all'indietro;
+>- lfall -> grave laterale;
+>- light -> caduta leggera;
+>- sit
+>- walk
+>- step

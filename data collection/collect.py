@@ -59,6 +59,8 @@ def collect_data(label, flag=False):
 
         except:
             print("Error encountered, line was not recorded.")
+            if k%5==0:
+                add_row(values, data)
 
     
 
