@@ -2,6 +2,7 @@ import serial
 from serial.tools import list_ports
 import time
 import csv
+import pandas as pd
 
 # Build CSV
 def build_csv(csv_name, kmax=400):
@@ -9,7 +10,7 @@ def build_csv(csv_name, kmax=400):
     f = open(csv_name,"w",newline='')
     writer = csv.writer(f, delimiter=",")
     # Add column names
-    headers = ["xAcc, yAcc, zAcc, xGyro, yGyro, zGyro"]
+    headers = ["xAcc", "yAcc", "zAcc", "xGyro", "yGyro", "zGyro"]
     writer.writerow(headers)
     f.close()
     return csv_name
@@ -21,9 +22,8 @@ def add_row(values, csv_name):
         # add the values
         writer.writerow(values)
 
-FLAG = True
 
-def collect_data(flag):
+def collect_data(label, flag=False):
     # Identify the correct port
     ports = list_ports.comports()
     for port in ports: print(port)
@@ -58,7 +58,13 @@ def collect_data(flag):
 
         except:
             print("Error encountered, line was not recorded.")
+        
+    df = pd.read_csv(data)
+    df["label"] = label
+    df.to_csv("data.csv")
+
+    
 
 if __name__=="__main__":
-    flag=True
-    collect_data(flag)
+    label = input()
+    collect_data(label, flag=True)
