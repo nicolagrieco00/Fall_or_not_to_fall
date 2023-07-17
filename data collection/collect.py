@@ -10,7 +10,7 @@ def build_csv(csv_name, kmax=400):
     f = open(csv_name,"w",newline='')
     writer = csv.writer(f, delimiter=",")
     # Add column names
-    headers = ["xAcc", "yAcc", "zAcc", "xGyro", "yGyro", "zGyro"]
+    headers = ["xAcc", "yAcc", "zAcc", "xGyro", "yGyro", "zGyro", "label"]
     writer.writerow(headers)
     f.close()
     return csv_name
@@ -39,11 +39,11 @@ def collect_data(label, flag=False):
 
     # How many data points to record
     kmax = 2000
-
+    data = "data.csv"
     # Loop through and collect data as it is available
     for k in range(0, kmax):
         if k==0 and flag:
-            data = build_csv("data.csv")
+            build_csv("data.csv")
         try:
             # Read the line
             s_bytes = serialCom.readline()
@@ -51,6 +51,7 @@ def collect_data(label, flag=False):
 
             # Parse the line            
             values = [float(x) for x in decoded_bytes.split()]
+            values.append(label)
             print(values)
 
             if k%5==0:
@@ -58,13 +59,9 @@ def collect_data(label, flag=False):
 
         except:
             print("Error encountered, line was not recorded.")
-        
-    df = pd.read_csv(data)
-    df["label"] = label
-    df.to_csv("data.csv")
 
     
 
 if __name__=="__main__":
     label = input()
-    collect_data(label, flag=True)
+    collect_data(label)
