@@ -10,7 +10,7 @@ def build_csv(csv_name, kmax=400):
     writer = csv.writer(f, delimiter=",")
     # Add column names
     headers = []
-    for k in range(0, kmax, 5):
+    for k in range(0, kmax):
         headers += ["Acc_x_"+ str(k+1), "Acc_y_"+ str(k+1),  "Acc_z_"+ str(k+1), "Gyro_x_" + str(k+1), "Gyro_y_" + str(k+1), "Gyro_z_" + str(k+1)]
     writer.writerow(headers)
     f.close()
@@ -22,6 +22,8 @@ def add_row(values, csv_name):
         writer = csv.writer(csvfile, delimiter=",")
         # add the values
         writer.writerow(values)
+
+FLAG = True
 
 # Identify the correct port
 ports = list_ports.comports()
@@ -37,11 +39,11 @@ serialCom.flushInput()
 serialCom.setDTR(True)
 
 # How many data points to record
-kmax = 400
+kmax = 2000
 
 # Loop through and collect data as it is available
-for k in range(0, kmax, 5):
-    if k==0:
+for k in range(0, kmax):
+    if k==0 and FLAG:
         data = build_csv("data.csv")
     try:
         # Read the line
@@ -52,8 +54,8 @@ for k in range(0, kmax, 5):
         values = [float(x) for x in decoded_bytes.split()]
         print(values)
 
-        add_row(values, data)
+        if k%5==0:
+            add_row(values, data)
 
     except:
         print("Error encountered, line was not recorded.")
-
