@@ -9,9 +9,7 @@ def build_csv(csv_name, kmax=400):
     f = open(csv_name,"w",newline='')
     writer = csv.writer(f, delimiter=",")
     # Add column names
-    headers = []
-    for k in range(0, kmax):
-        headers += ["Acc_x_"+ str(k+1), "Acc_y_"+ str(k+1),  "Acc_z_"+ str(k+1), "Gyro_x_" + str(k+1), "Gyro_y_" + str(k+1), "Gyro_z_" + str(k+1)]
+    headers = ["xAcc, yAcc, zAcc, xGyro, yGyro, zGyro"]
     writer.writerow(headers)
     f.close()
     return csv_name
@@ -25,37 +23,42 @@ def add_row(values, csv_name):
 
 FLAG = True
 
-# Identify the correct port
-ports = list_ports.comports()
-for port in ports: print(port)
+def collect_data(flag):
+    # Identify the correct port
+    ports = list_ports.comports()
+    for port in ports: print(port)
 
-# Open the serial com
-serialCom = serial.Serial('COM7',9600)
+    # Open the serial com
+    serialCom = serial.Serial('COM7',9600)
 
-# Toggle DTR to reset the Arduino
-serialCom.setDTR(False)
-time.sleep(1)
-serialCom.flushInput()
-serialCom.setDTR(True)
+    # Toggle DTR to reset the Arduino
+    serialCom.setDTR(False)
+    time.sleep(1)
+    serialCom.flushInput()
+    serialCom.setDTR(True)
 
-# How many data points to record
-kmax = 2000
+    # How many data points to record
+    kmax = 2000
 
-# Loop through and collect data as it is available
-for k in range(0, kmax):
-    if k==0 and FLAG:
-        data = build_csv("data.csv")
-    try:
-        # Read the line
-        s_bytes = serialCom.readline()
-        decoded_bytes = s_bytes.decode("utf-8").strip('\r\n')
+    # Loop through and collect data as it is available
+    for k in range(0, kmax):
+        if k==0 and flag:
+            data = build_csv("data.csv")
+        try:
+            # Read the line
+            s_bytes = serialCom.readline()
+            decoded_bytes = s_bytes.decode("utf-8").strip('\r\n')
 
-        # Parse the line            
-        values = [float(x) for x in decoded_bytes.split()]
-        print(values)
+            # Parse the line            
+            values = [float(x) for x in decoded_bytes.split()]
+            print(values)
 
-        if k%5==0:
-            add_row(values, data)
+            if k%5==0:
+                add_row(values, data)
 
-    except:
-        print("Error encountered, line was not recorded.")
+        except:
+            print("Error encountered, line was not recorded.")
+
+if __name__=="__main__":
+    flag=True
+    collect_data(flag)
