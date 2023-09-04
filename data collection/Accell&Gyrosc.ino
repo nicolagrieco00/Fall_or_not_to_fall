@@ -9,7 +9,7 @@
   - Arduino Nano 33 BLE Sense
 
   created 10 Jul 2019
-  by Riccardo Rizzo
+  by Riccardo Rizzo and modified by "I Cioccolatosi" team
 
   This example code is in the public domain.
 */
