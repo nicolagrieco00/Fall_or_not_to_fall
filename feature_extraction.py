@@ -195,6 +195,9 @@ def adjust_df(s: pd.Series) -> pd.DataFrame:
 
 
 def preproc(df, n_bins=10, n_lags=10):
+
+    df = flatten_ts(df)
+    df = vectorial_transform(df)
     
     # group timeseries by device (accelerometer and gyroscope)
     group_dict = {}
@@ -257,15 +260,7 @@ def preproc(df, n_bins=10, n_lags=10):
     #         i=0
     #     i+=1
     # psds.columns = new_columns
-
-    # # create new column 'Season' based on 'when'
-    # df['when'] = pd.to_datetime(df['when'], format='%Y-%m')
-    # df["Season"] = df['when'].apply(get_season)
-
-    # # take the number of moths passed from the 'zero' time
-    # min_date =  df['when'].min()
-    # df['elapsed_time'] = (df['when'].dt.year - min_date.year) * 12 + (df['when'].dt.month - min_date.month)
     
-    # new_df = pd.concat([df[["Season", "elapsed_time"]], magns, autocorrs, psds], axis=1)
+    # new_df = pd.concat([magns, autocorrs, psds], axis=1)
 
     return new_df
