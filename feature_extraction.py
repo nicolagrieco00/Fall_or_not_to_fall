@@ -264,6 +264,6 @@ def preproc(df, n_bins=10, n_lags=10):
     
     # new_df = pd.concat([magns, autocorrs, psds], axis=1)
 
-    new_df["labels"] = labels
+    new_df["label"] = labels
 
     return new_df
