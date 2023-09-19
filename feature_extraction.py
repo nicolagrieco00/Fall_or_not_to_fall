@@ -69,7 +69,8 @@ def vectorial_transform(new_data):
     # rename the columns
     df[[f'acc_{i+1}' for i in range(chunk_size)]] = pd.DataFrame(new_data.acc_sum.to_list(), index = new_data.index)
     df[[f'gyr_{i+1}' for i in range(chunk_size)]] = pd.DataFrame(new_data.gyr_sum.to_list(), index = new_data.index)
-    return df
+    labels = new_data["label"]
+    return df, labels
 
 ###############################################################################################################
 
@@ -197,7 +198,7 @@ def adjust_df(s: pd.Series) -> pd.DataFrame:
 def preproc(df, n_bins=10, n_lags=10):
 
     df = flatten_ts(df)
-    df = vectorial_transform(df)
+    df, labels = vectorial_transform(df)
     
     # group timeseries by device (accelerometer and gyroscope)
     group_dict = {}
@@ -262,5 +263,7 @@ def preproc(df, n_bins=10, n_lags=10):
     # psds.columns = new_columns
     
     # new_df = pd.concat([magns, autocorrs, psds], axis=1)
+
+    new_df["labels"] = labels
 
     return new_df
