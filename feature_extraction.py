@@ -6,7 +6,6 @@ import re
 from scipy.fft import fft, fftfreq
 from scipy.signal import periodogram
 import statsmodels.api as sm
-from scipy.stats import skew
 
 
 def flatten_ts(data):
@@ -58,7 +57,7 @@ def gyr_sum(vec):
     return gyr
 
 
-def vectorial_transform(new_data):
+def vec_sum(new_data):
     df = pd.DataFrame()
     chunk_size = 400
     # horizontally split each row in timeseries of length 400
@@ -195,11 +194,8 @@ def adjust_df(s: pd.Series) -> pd.DataFrame:
 
 
 
-def preproc(df, n_bins=10, n_lags=10):
+def preproc(df, labels, n_bins=10, n_lags=10):
 
-    df = flatten_ts(df)
-    df, labels = vectorial_transform(df)
-    
     # group timeseries by device (accelerometer and gyroscope)
     group_dict = {}
     for col in df.columns:

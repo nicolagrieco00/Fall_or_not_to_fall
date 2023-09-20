@@ -1,0 +1,25 @@
+FARSEEING real-world fall repository:
+
+-  http://farseeingresearch.eu/the-farseeing-real-world-fall-repository-a-large-scale-collaborative-database-to-collect-and-share-sensor-signals-from-real-world-falls/
+
+- to compare our performanced on simulated data with performances on real fall data
+
+
+
+
+Articles for fall detection with ML:
+
+- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7697900/
+
+- A Wavelet-Based Approach to Fall Detection -> https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4482005/
+
+
+
+
+# Suggestiongs:
+
+>- report the effective sampling frequency in Hz
+>- speak about the WINDOW for signal processing
+>- also add the CALIBRATION problem and the assumption of bias exclusion w.r.t. mother wavelet
+>- specify the number of people used to collect data and the number of examples with a brief view of data before preproc
+>- report use cases and introduce possible applications (for example the video with air bag jacket)
