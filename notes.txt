@@ -3,6 +3,9 @@ Articles for fall detection with ML:
 - https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7697900/
 - A Wavelet-Based Approach to Fall Detection -> https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4482005/
 
+# Plots:
+>- adapt the plots from signle samples for each class to class plots with snsn mean and std
+
 
 # preporc and collection:
 
