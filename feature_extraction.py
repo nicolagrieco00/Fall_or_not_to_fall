@@ -6,7 +6,11 @@ import re
 from scipy.fft import fft, fftfreq
 from scipy.signal import periodogram
 import statsmodels.api as sm
+import matplotlib.pyplot as plt
+from scipy.signal import cwt, morlet
 
+
+##### FLATTEN THE DATA SET IN AN AD HOC DATA FRAME ##########################################################################################
 
 def flatten_ts(data):
     ''' The function flattens the signals (6 signals) belonging to the same time slot
@@ -36,7 +40,7 @@ def flatten_ts(data):
     return new_data
 
 
-######## set of functions useful for applying a transformation to our data frame in an efficient way ############
+######## FUNCTIONS FOR VECTORIAL SUM (INTENSITY OF VECTORS IN 3-D SPACE) ####################################################################
 
 def chunk_splitting(row):
 
@@ -71,8 +75,8 @@ def vec_sum(new_data):
     labels = new_data["label"]
     return df, labels
 
-###############################################################################################################
 
+##### FAST FOURIER TRANSFORM STATISTICS FEATURE EXTRACTION #############################################################################
 
 def maxbin(row: Union[List[float], np.ndarray], plot: bool, n_bins: int = 10) -> List[float]:
     """
@@ -263,3 +267,65 @@ def preproc(df, labels, n_bins=10, n_lags=10):
     new_df["label"] = labels
 
     return new_df
+
+##### FUNCTIONS FOR PEAKS WAVELETS MAX COEFFICIENTS #####################################################################################
+
+def cwt_coeff(peak_wave, mother_wave, scale, translation):
+    std_mother_wave = (mother_wave - translation)/scale
+    coeff = sum(peak_wave * std_mother_wave)/np.sqrt(scale)
+    return coeff
+
+def max_cwt_coeff(peak_wave, mother_wave):
+    max_coeff = np.NINF
+    translation_vec = np.arange(10, 30, 10)
+    for b in translation_vec:
+        new_coeff = cwt_coeff(peak_wave, mother_wave, 2, b)
+        if new_coeff > max_coeff:
+            max_coeff = new_coeff
+    return max_coeff
+
+def peakes_wavelet_approx(signal, mother_wave, plot=False, label=None):
+    half_window = 20 # number of sampled values in our data collection in 2 seconds of time
+    threshold = 1.9 * 9.81 
+    peaks = signal[signal >= threshold]
+
+    if len(peaks) == 0:
+        if plot:
+            print("There are no peaks!")
+        return 0
+    indexes = np.where(signal >= threshold)[0]
+    peaks_df = pd.DataFrame({"peak": peaks, "idx": np.array(indexes, dtype=int)})
+    if plot:
+        fig, ax = plt.subplots(1,2, figsize=(10,5))
+    for row in peaks_df.iterrows():
+        idx = int(row[1].idx)
+        # take the values inside the window centered around the actual peak
+        # but first check if the peak is in extreme positions of the signal
+        if (idx - half_window) < 0:
+            temp = signal[: (idx + half_window)]
+        elif (idx + half_window) > len(signal):
+            temp = signal[(idx - half_window) :]
+        else:
+            temp = signal[(idx - half_window): (idx + half_window)]
+
+        # wavelet cont transform of the peak pattern
+        peak_wave = cwt(temp, morlet, [18])
+        peak_wave = peak_wave.reshape(peak_wave.shape[1],)
+        max_cwt = max_cwt_coeff(peak_wave, mother_wave[:len(peak_wave)])
+        x = np.arange(0,len(temp))
+        # temp = pd.DataFrame({"arr": arr, "wave":wave})
+        if plot:
+            ax[1].plot(x,peak_wave)
+            ax[0].set_title("Peaks signal pattern")
+            ax[0].plot(x,temp)
+            ax[1].set_title("Peaks Wavelet Transform")
+    if plot:
+        ax[1].plot(x,mother_wave[:len(x)], color="darkblue", linewidth=4, alpha=0.7)
+        plt.suptitle(f'{label.upper()} signal   -   CWD coeff.: {round(abs(max_cwt),3)}')
+        plt.show()
+    return max_cwt
+
+def acc_max_cwt(row, mother_wave):
+    row = np.array(row[:400])
+    max_coeff = peakes_wavelet_approx(row, mother_wave)
+    return max_coeff

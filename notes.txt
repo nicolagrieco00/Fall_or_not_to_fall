@@ -1,10 +1,16 @@
-Articles for fall detection with ML:
+Articles for fall detection with MACHINE LEARNING:
 
 - https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7697900/
 - A Wavelet-Based Approach to Fall Detection -> https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4482005/
+- Naive Bayes and SVM --> https://www.hindawi.com/journals/bmri/2020/2167160/
+- Decision tree, Naive Bayes and SVM --> https://www.mdpi.com/2076-3417/13/8/4988#B14-applsci-13-04988
+
+Articles for fall detection with DEEP LEARNING:
+- the beast article found!!!!!!!!!!!!!! --> https://www.mdpi.com/2076-3417/13/8/4988
 
 # Plots:
 >- adapt the plots from signle samples for each class to class plots with snsn mean and std
+>- comparative plots of performaces of machine learing algortihms --> ROC curve, Precision-Recall curve, confusion matrix (or better report accuracy, sensitivity and specificity
 
 
 # preporc and collection:
