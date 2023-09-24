@@ -6,7 +6,9 @@ Articles for fall detection with MACHINE LEARNING:
 - Decision tree, Naive Bayes and SVM --> https://www.mdpi.com/2076-3417/13/8/4988#B14-applsci-13-04988
 
 Articles for fall detection with DEEP LEARNING:
-- the beast article found!!!!!!!!!!!!!! --> https://www.mdpi.com/2076-3417/13/8/4988
+>- the best article found!!!!!!!!!!!!!! --> https://www.mdpi.com/2076-3417/13/8/4988
+>- techniques for better results---> pplying data augmentation techniques: adding gaussian noise with standard deviation to the input sequence | scaling the original sequence by a random value in the range 0.7 and 1.1 (https://www.sciencedirect.com/science/article/pii/S0169260719311770)
+>- CNN+LSTM
 
 # Plots:
 >- adapt the plots from signle samples for each class to class plots with snsn mean and std
@@ -14,7 +16,6 @@ Articles for fall detection with DEEP LEARNING:
 
 
 # preporc and collection:
-
 >- report the effective sampling frequency in Hz
 >- speak about the WINDOW for signal processing
 >- we have to say that we excluded the alpha degree (reported in this article: https://www.ijrte.org/wp-content/uploads/papers/v8i3/C3877098319.pdf) since we cannot assume a fixed orientation fo the device during data collection or in test phase
@@ -27,7 +28,6 @@ Articles for fall detection with DEEP LEARNING:
 
 
 # Supervised ML algorithms:
-
 >- knn vs logistic (cap 1 ESL)
 >- naive bayes vs logistic?
 >- justify logistic CV results
@@ -40,9 +40,11 @@ Articles for fall detection with DEEP LEARNING:
 >- spectral clustering?
 
 
-FARSEEING real-world fall repository:
+# Deepl code:
+>- https://github.com/JJN123/Fall-Detection
+>- https://github.com/NathanielFelleke/TinyML-Fall-Detection/blob/main/Fall_Detection_Training.ipynb
 
--  http://farseeingresearch.eu/the-farseeing-real-world-fall-repository-a-large-scale-collaborative-database-to-collect-and-share-sensor-signals-from-real-world-falls/
-- to compare our performanced on simulated data with performances on real fall data
 
+# Further improvements:
+>-  cross-dataset classifier for fall detection which is independent of the accelerometer device, the sampling rate or the length of the sequences. 
 
