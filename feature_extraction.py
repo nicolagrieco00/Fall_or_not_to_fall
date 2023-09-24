@@ -50,13 +50,6 @@ def chunk_splitting(row):
 
     return chunks
 
-def chunk_splitting2(row):
-    # Split the list into chunks of 400 values
-    n_chunks = 1200/400
-    chunks = np.array_split(np.array(row.values[:len(row.values)-1], dtype=float), n_chunks)
-
-    return chunks
-
 def acc_sum(vec):
     acc = np.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
     
@@ -82,26 +75,6 @@ def vec_sum(new_data):
     labels = new_data["label"]
     return df, labels
 
-<<<<<<< Updated upstream
-=======
-
-def vec_sum2(new_data):
-    df = pd.DataFrame()
-    chunk_size = 400
-    # horizontally split each row in timeseries of length 400
-    chunks = new_data.apply(lambda x: chunk_splitting2(x), axis=1)
-    # apply the vectorial sum for acc and gyr
-    new_data["acc_sum"] = chunks.apply(lambda x: acc_sum(x))
-    
-    # rename the columns
-    df[[f'acc_{i+1}' for i in range(chunk_size)]] = pd.DataFrame(new_data.acc_sum.to_list(), index = new_data.index)
-    
-    labels = new_data["label"]
-    return df, labels
-
-
-###############################################################################################################
->>>>>>> Stashed changes
 
 ##### FAST FOURIER TRANSFORM STATISTICS FEATURE EXTRACTION #############################################################################
 
