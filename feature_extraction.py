@@ -8,7 +8,8 @@ from scipy.signal import periodogram
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from scipy.signal import cwt, morlet
-
+from scipy.stats import skew
+import warnings
 
 ##### FLATTEN THE DATA SET IN AN AD HOC DATA FRAME ##########################################################################################
 
@@ -42,38 +43,91 @@ def flatten_ts(data):
 
 ######## FUNCTIONS FOR VECTORIAL SUM (INTENSITY OF VECTORS IN 3-D SPACE) ####################################################################
 
-def chunk_splitting(row):
+def chunk_splitting(row, dim=2400):
 
     # Split the list into chunks of 400 values
-    n_chunks = 2400/400
+    n_chunks = dim/400
     chunks = np.array_split(np.array(row.values[:len(row.values)-1], dtype=float), n_chunks)
-
     return chunks
 
 def acc_sum(vec):
     acc = np.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
-    
     return acc
 
 def gyr_sum(vec):
     gyr = np.sqrt(vec[3]**2 + vec[4]**2 + vec[5]**2)
-
     return gyr
 
 
-def vec_sum(new_data):
+def vec_sum(new_data, both=True, dim=2400):
     df = pd.DataFrame()
     chunk_size = 400
     # horizontally split each row in timeseries of length 400
-    chunks = new_data.apply(lambda x: chunk_splitting(x), axis=1)
+    chunks = new_data.apply(lambda x: chunk_splitting(x, dim), axis=1)
+
     # apply the vectorial sum for acc and gyr
     new_data["acc_sum"] = chunks.apply(lambda x: acc_sum(x))
-    new_data["gyr_sum"] = chunks.apply(lambda x: gyr_sum(x))
     # rename the columns
     df[[f'acc_{i+1}' for i in range(chunk_size)]] = pd.DataFrame(new_data.acc_sum.to_list(), index = new_data.index)
-    df[[f'gyr_{i+1}' for i in range(chunk_size)]] = pd.DataFrame(new_data.gyr_sum.to_list(), index = new_data.index)
+
+    if both:
+        new_data["gyr_sum"] = chunks.apply(lambda x: gyr_sum(x))
+        df[[f'gyr_{i+1}' for i in range(chunk_size)]] = pd.DataFrame(new_data.gyr_sum.to_list(), index = new_data.index)
     labels = new_data["label"]
     return df, labels
+
+### WAVELET TRANSFORM ###################################################################################################################
+
+def find_max_peak(signal):
+    max_value = np.max(signal)
+    max_index = np.argmax(signal)
+    peak_df = pd.DataFrame({"peak": [max_value], "idx": [max_index]})
+    return peak_df
+
+def take_peak(signal):
+     half_window = 20
+     peak_df = find_max_peak(signal)
+     idx = peak_df["idx"].iloc[0]
+     # take the values inside the window centered around the actual peak
+     # but first check if the peak is in extreme positions of the signal
+     if (idx - half_window) < 0:
+        temp = signal[: (idx + half_window)]
+     elif (idx + half_window) > len(signal):
+        temp = signal[(idx - half_window) :]
+     else:
+         temp = signal[(idx - half_window):(idx + half_window)]
+       
+     return temp       
+
+def mean_peak_pattern(df):
+    result_dataset = pd.DataFrame()
+
+    # Iterate through each row of df_FB_new and apply build_mother
+    for row in range(len(df.iloc[:, :400])):  # Iterate only over the first 400 columns
+        result_vector = pd.DataFrame([take_peak(df.iloc[row,0:400])])  # Apply build_mother to the row
+        result_vector.columns = [f'Col_{i+1}' for i in range(40)]
+        result_dataset = pd.concat([result_dataset,result_vector], ignore_index= True, axis=0)
+
+    return result_dataset.mean(axis=0).to_numpy()
+
+
+def build_auxiliary_df(df):
+    const = 9.81
+    ## Adding the genric label fall
+    df["label"] = "fall"
+    ## Drop the column Time(s)
+    df_new = df.drop(["Time(s)"], axis = 1)
+    ## Flatting the data to use the previous functions
+    df_new_flatted = flatten_ts(df_new)
+
+    ## Calculating the magnitude of the acceleration to obtain the final time series
+    warnings.filterwarnings('ignore')
+    df_new, labels_FF = vec_sum(df_new_flatted, both=False, dim=1200)
+    df_new["label"] = labels_FF
+    ## moltiply per 9.81
+    df_new.iloc[:, :400] = df_new.iloc[:, :400] * const
+
+    return df_new
 
 
 ##### FAST FOURIER TRANSFORM STATISTICS FEATURE EXTRACTION #############################################################################
@@ -136,30 +190,30 @@ def fourier_magnitudes(signal: np.ndarray, n_bins: int = 10, plot: bool = False)
     return peaks
 
 
-# def psd_stats(signal: np.ndarray) -> np.ndarray:
-#     """
-#     This function takes a matrix (signal) which contains a time series for each row.
-#     It calculates the Power Spectral Density (PSD) from the signal and returns three different summary statistics
-#     from the distribution of PSD: the median, the mean absolute deviation, and the skewness (third moment).
+def psd_stats(signal: np.ndarray) -> np.ndarray:
+    """
+    This function takes a matrix (signal) which contains a time series for each row.
+    It calculates the Power Spectral Density (PSD) from the signal and returns three different summary statistics
+    from the distribution of PSD: the median, the mean absolute deviation, and the skewness (third moment).
 
-#     Args:
-#         signal (np.ndarray): The input matrix, where each row represents a time series.
+    Args:
+        signal (np.ndarray): The input matrix, where each row represents a time series.
 
-#     Returns:
-#         np.ndarray: An array containing the median, mean absolute deviation, and skewness of the Power Spectral Density.
-#     """
-#     signal= np.array(signal)
-#     # let's calculate the Power Spectral Density
-#     psd = np.array(np.abs(np.apply_along_axis(periodogram, 0, signal)[1]), dtype=np.float64)
+    Returns:
+        np.ndarray: An array containing the median, mean absolute deviation, and skewness of the Power Spectral Density.
+    """
+    signal= np.array(signal)
+    # let's calculate the Power Spectral Density
+    psd = np.array(np.abs(np.apply_along_axis(periodogram, 0, signal)[1]), dtype=np.float64)
     
-#     # extract our main summaries from the distribution
-#     median = np.median(psd, axis=0)
-#     # calculate the third moment (skewness)
-#     third_moment = skew(psd, axis=0)
-#     # calculate the mean absolute deviation
-#     mad = np.mean(np.abs(psd - np.mean(psd, axis=0)), axis = 0)
+    # extract our main summaries from the distribution
+    median = np.median(psd, axis=0)
+    # calculate the third moment (skewness)
+    third_moment = skew(psd, axis=0)
+    # calculate the mean absolute deviation
+    mad = np.mean(np.abs(psd - np.mean(psd, axis=0)), axis = 0)
     
-#     return np.array([median, mad, third_moment])
+    return np.array([median, mad, third_moment])
 
 
 # def acf(signal: np.ndarray, n_lags: int = 10) -> np.ndarray:
@@ -198,7 +252,7 @@ def adjust_df(s: pd.Series) -> pd.DataFrame:
 
 
 
-def preproc(df, labels, n_bins=10, n_lags=10):
+def preproc(df, n_bins=10, n_lags=10):
 
     # group timeseries by device (accelerometer and gyroscope)
     group_dict = {}
@@ -215,12 +269,12 @@ def preproc(df, labels, n_bins=10, n_lags=10):
     # # evaluate autocorrelations
     # # autocorrs = new_df.apply(lambda x: acf(x, n_lags))
     # # evaluate psd stats
-    # # psds = new_df.apply(psd_stats)
+    psds = new_df.apply(psd_stats)
 
     # adjust in DataFrame format
     magns = adjust_df(magns)
     # autocorrs = adjust_df(autocorrs)
-    # psds = adjust_df(psds)
+    psds = adjust_df(psds)
 
     # change col names of our dataframe of magnitudes
     existing_columns = magns.columns
@@ -249,22 +303,20 @@ def preproc(df, labels, n_bins=10, n_lags=10):
     # # remove all the column which correspond to autocorrelation with lag=0
     # autocorrs = autocorrs.loc[:, (autocorrs != 1).any(axis=0)]
 
-    # # change col names of our dataframe of autocorrelations
-    # existing_columns = psds.columns
-    # # generate a list of new column names
-    # new_columns = []
-    # i=1
-    # n_stats = 3
-    # for j,col_name in enumerate(existing_columns):
-    #     new_columns.append(f"{col_name}_psd{i}")
-    #     if ((j+1)%(n_stats)) == 0:
-    #         i=0
-    #     i+=1
-    # psds.columns = new_columns
+    # # change col names of our dataframe of psd
+    existing_columns = psds.columns
+    # generate a list of new column names
+    new_columns = []
+    i=1
+    n_stats = 3
+    for j,col_name in enumerate(existing_columns):
+        new_columns.append(f"{col_name}_psd{i}")
+        if ((j+1)%(n_stats)) == 0:
+            i=0
+        i+=1
+    psds.columns = new_columns
     
-    # new_df = pd.concat([magns, autocorrs, psds], axis=1)
-
-    new_df["label"] = labels
+    new_df = pd.concat([magns, psds], axis=1)
 
     return new_df
 

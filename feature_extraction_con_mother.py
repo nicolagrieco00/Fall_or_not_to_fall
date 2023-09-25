@@ -38,17 +38,10 @@ def flatten_ts(data):
 
 ######## set of functions useful for applying a transformation to our data frame in an efficient way ############
 
-def chunk_splitting(row):
+def chunk_splitting(row, dim=2400):
 
     # Split the list into chunks of 400 values
-    n_chunks = 2400/400
-    chunks = np.array_split(np.array(row.values[:len(row.values)-1], dtype=float), n_chunks)
-
-    return chunks
-
-def chunk_splitting2(row):
-    # Split the list into chunks of 400 values
-    n_chunks = 1200/400
+    n_chunks = dim/400
     chunks = np.array_split(np.array(row.values[:len(row.values)-1], dtype=float), n_chunks)
 
     return chunks
