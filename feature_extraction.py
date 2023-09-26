@@ -1,6 +1,7 @@
 
 from typing import List, Union
 import pandas as pd
+import os
 import numpy as np
 import re
 from scipy.fft import fft, fftfreq
@@ -10,6 +11,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import cwt, morlet
 from scipy.stats import skew
 import warnings
+
 
 ##### FLATTEN THE DATA SET IN AN AD HOC DATA FRAME ##########################################################################################
 
@@ -76,39 +78,7 @@ def vec_sum(new_data, both=True, dim=2400):
     labels = new_data["label"]
     return df, labels
 
-### WAVELET TRANSFORM ###################################################################################################################
-
-def find_max_peak(signal):
-    max_value = np.max(signal)
-    max_index = np.argmax(signal)
-    peak_df = pd.DataFrame({"peak": [max_value], "idx": [max_index]})
-    return peak_df
-
-def take_peak(signal):
-     half_window = 20
-     peak_df = find_max_peak(signal)
-     idx = peak_df["idx"].iloc[0]
-     # take the values inside the window centered around the actual peak
-     # but first check if the peak is in extreme positions of the signal
-     if (idx - half_window) < 0:
-        temp = signal[: (idx + half_window)]
-     elif (idx + half_window) > len(signal):
-        temp = signal[(idx - half_window) :]
-     else:
-         temp = signal[(idx - half_window):(idx + half_window)]
-       
-     return temp       
-
-def mean_peak_pattern(df):
-    result_dataset = pd.DataFrame()
-
-    # Iterate through each row of df_FB_new and apply build_mother
-    for row in range(len(df.iloc[:, :400])):  # Iterate only over the first 400 columns
-        result_vector = pd.DataFrame([take_peak(df.iloc[row,0:400])])  # Apply build_mother to the row
-        result_vector.columns = [f'Col_{i+1}' for i in range(40)]
-        result_dataset = pd.concat([result_dataset,result_vector], ignore_index= True, axis=0)
-
-    return result_dataset.mean(axis=0).to_numpy()
+##### MOTHER WAVELET BUILDING ##########################################################################################################
 
 
 def build_auxiliary_df(df):
@@ -130,15 +100,125 @@ def build_auxiliary_df(df):
     return df_new
 
 
+def find_max_peak(signal):
+    max_value = np.max(signal)
+    max_index = np.argmax(signal)
+    peak_df = pd.DataFrame({"peak": [max_value], "idx": [max_index]})
+    return peak_df
+
+
+def take_peak(signal):
+     half_window = 20
+     peak_df = find_max_peak(signal)
+     idx = peak_df["idx"].iloc[0]
+     # take the values inside the window centered around the actual peak
+     # but first check if the peak is in extreme positions of the signal
+     if (idx - half_window) < 0:
+        temp = signal[: (idx + half_window)]
+     elif (idx + half_window) > len(signal):
+        temp = signal[(idx - half_window) :]
+     else:
+         temp = signal[(idx - half_window):(idx + half_window)]
+       
+     return temp       
+
+
+def mean_peak_pattern(df):
+    result_dataset = pd.DataFrame()
+
+    # Iterate through each row of df_FB_new and apply build_mother
+    for row in range(len(df.iloc[:, :400])):  # Iterate only over the first 400 columns
+        result_vector = pd.DataFrame([take_peak(df.iloc[row,0:400])])  # Apply build_mother to the row
+        result_vector.columns = [f'Col_{i+1}' for i in range(40)]
+        result_dataset = pd.concat([result_dataset,result_vector], ignore_index= True, axis=0)
+
+    return result_dataset.mean(axis=0).to_numpy()
+
+
+def mother_wavelet(res: list):
+    FF_mean = mean_peak_pattern(res[0])
+    FS_mean = mean_peak_pattern(res[1])
+    FB_mean = mean_peak_pattern(res[2])
+    FF_mean_wave = cwt(FF_mean, morlet, [18])[0]
+    FS_mean_wave = cwt(FS_mean, morlet, [18])[0]
+    FB_mean_wave = cwt(FB_mean, morlet, [18])[0]
+
+    return np.mean([FF_mean_wave, FS_mean_wave, FB_mean_wave], axis=0)
+
+
+def extract_wave_df(dir_name):
+    # Define the directory where your files are located
+    directory = os.getcwd() + f'\\{dir_name}\\'
+
+    # Create empty DataFrames for each category (FB, FF, FS)
+    df_FB = pd.DataFrame()
+    df_FF = pd.DataFrame()
+    df_FS = pd.DataFrame()
+
+    # Define the common code to extract 400 rows from a DataFrame
+    def extract_400_rows(df):
+        desired_row_count = 400
+        current_row_count = len(df)
+        step_size = max(1, current_row_count // desired_row_count)
+        selected_indices = range(0, current_row_count, step_size)
+        selected_rows = df.iloc[selected_indices]
+        return selected_rows.head(desired_row_count)
+
+    # Iterate through files in the directory
+    for filename in os.listdir(directory):
+        
+        if filename.endswith(".csv"):
+            # Determine the category based on the file name
+            category = filename.split("_")[-1].split(".")[0]
+            
+            # Read the CSV file into a DataFrame
+            df = pd.read_csv(os.path.join(directory, filename), header=None)
+            
+            # Extract 400 rows using the common code
+            selected_rows = extract_400_rows(df)
+        
+            # Append the selected rows to the appropriate DataFrame based on the category
+            if category == 'FB':
+                df_FB = pd.concat([df_FB, selected_rows], ignore_index=True)
+
+            elif category == 'FF':
+                df_FF = pd.concat([df_FF, selected_rows], ignore_index=True)
+                
+            elif category == 'FS':
+                df_FS = pd.concat([df_FS, selected_rows], ignore_index=True)
+            
+
+    df_FF.columns = ["Acc_x", "Acc_y", "Acc_z", "Time(s)"]
+    df_FS.columns = ["Acc_x", "Acc_y", "Acc_z", "Time(s)"]
+    df_FB.columns = ["Acc_x", "Acc_y", "Acc_z", "Time(s)"]
+
+    # build the auxiliary data frames to build the mother wavelets
+    df_FF_new = build_auxiliary_df(df_FF)
+    df_FS_new = build_auxiliary_df(df_FS)
+    df_FB_new = build_auxiliary_df(df_FB)
+
+
+    FF_mean = mean_peak_pattern(df_FF_new)
+    FS_mean = mean_peak_pattern(df_FS_new)
+    FB_mean = mean_peak_pattern(df_FB_new)
+    FF_mean_wave = cwt(FF_mean, morlet, [18])[0]
+    FS_mean_wave = cwt(FS_mean, morlet, [18])[0]
+    FB_mean_wave = cwt(FB_mean, morlet, [18])[0]
+
+    return np.mean([FF_mean_wave, FS_mean_wave, FB_mean_wave], axis=0)
+
+
 ##### FAST FOURIER TRANSFORM STATISTICS FEATURE EXTRACTION #############################################################################
 
-def maxbin(row: Union[List[float], np.ndarray], plot: bool, n_bins: int = 10) -> List[float]:
+def maxbin(row: Union[List[float], np.ndarray], plot: bool, precision: int = -1, n_bins: int = 10) -> List[float]:
     """
     Divide the data into a specified number of bins and calculate the maximum value for each bin.
 
     Args:
         row (list or array): The data to be divided into bins.
-        num_bins (int, optional): The number of bins to divide the data into. Defaults to 10.
+        plot (boolean): flag argument to explicitly plot the results. 
+        precision (int): how many peaks close the origin you want to consider. Defaults to -1 (all over the found peaks).
+        n_bins (int, optional): The number of bins to divide the data into. Defaults to 10.
 
     Returns:
         list: A list containing the maximum value for each bin.
@@ -159,10 +239,10 @@ def maxbin(row: Union[List[float], np.ndarray], plot: bool, n_bins: int = 10) ->
     if plot:
         return max_freqs, max_values
     else:
-        return max_values
+        return max_values[:(precision + 1)]
 
 
-def fourier_magnitudes(signal: np.ndarray, n_bins: int = 10, plot: bool = False) -> np.ndarray:
+def fourier_magnitudes(signal: np.ndarray, n_bins: int = 10, precision: int = -1, plot: bool = False) -> np.ndarray:
     """
     This function takes a matrix (signal) which contains a time series for each row.
     It applies the Fast Fourier Transform and uses the get_max_per_bin function to find the maximum peaks for each bin of the arrays of the power spectrum for the FFT.
@@ -185,7 +265,7 @@ def fourier_magnitudes(signal: np.ndarray, n_bins: int = 10, plot: bool = False)
     # apply power spectrum formula
     magnitudes = np.abs(magnitudes)**2 
     # take the peaks for each bin
-    peaks = np.apply_along_axis(lambda x: maxbin(x, plot, n_bins), 0, magnitudes)
+    peaks = np.apply_along_axis(lambda x: maxbin(x, plot, precision, n_bins), 0, magnitudes)
     
     return peaks
 
@@ -216,24 +296,6 @@ def psd_stats(signal: np.ndarray) -> np.ndarray:
     return np.array([median, mad, third_moment])
 
 
-# def acf(signal: np.ndarray, n_lags: int = 10) -> np.ndarray:
-#     """
-#     This function takes a matrix (signal) which contains a time series for each row.
-#     It calculates the auto-correlation for different lags.
-
-#     Args:
-#         signal (np.ndarray): The input matrix, where each row represents a time series.
-#         num_lags (int, optional): The number of lags to calculate the auto-correlation for. Defaults to 10.
-
-#     Returns:
-#         np.ndarray: The auto-correlation for each time series in the input matrix.
-#     """
-#     signal= np.array(signal)
-#     autocorrelations = np.apply_along_axis(lambda x: sm.tsa.acf(x, nlags=n_lags), 0, signal)
-
-
-#     return autocorrelations
-
 def adjust_df(s: pd.Series) -> pd.DataFrame:
     """
     This function takes a pandas Series, explodes and transposes it, and returns it as a DataFrame.
@@ -250,75 +312,6 @@ def adjust_df(s: pd.Series) -> pd.DataFrame:
     new_df = new_df.T
     return new_df
 
-
-
-def preproc(df, n_bins=10, n_lags=10):
-
-    # group timeseries by device (accelerometer and gyroscope)
-    group_dict = {}
-    for col in df.columns:
-        # match "acc" or "gyr"
-        match = re.match("^([a-z]{3})", col)
-        group_dict[col] = match.group() if match else None
-
-    new_df = df.T.groupby(group_dict, axis=0)
-
-    # evaluate max magnitudes (intesities of the frequencies from Fourier Fast transform) for each observation for each accelerometer
-    magns = new_df.apply(lambda x: fourier_magnitudes(x, n_bins))
-
-    # # evaluate autocorrelations
-    # # autocorrs = new_df.apply(lambda x: acf(x, n_lags))
-    # # evaluate psd stats
-    psds = new_df.apply(psd_stats)
-
-    # adjust in DataFrame format
-    magns = adjust_df(magns)
-    # autocorrs = adjust_df(autocorrs)
-    psds = adjust_df(psds)
-
-    # change col names of our dataframe of magnitudes
-    existing_columns = magns.columns
-    # generate a list of new column names
-    new_columns = []
-    i=1
-    for j,col_name in enumerate(existing_columns):
-        if ((j+1)%(n_bins+1)) == 0:
-            i=1
-        new_columns.append(f"{col_name}_max_mag_{i}")
-        i+=1
-    magns.columns = new_columns
-    new_df = magns
-    # # change col names of our dataframe of autocorrelations
-    # existing_columns = autocorrs.columns
-    # # generate a list of new column names
-    # new_columns = []
-    # i=0
-    # for j,col_name in enumerate(existing_columns):
-    #     if ((j+1)%(n_lags+2)) == 0:
-    #         i=0
-    #     new_columns.append(f"{col_name}_acf_l{i}")
-    #     i+=1
-    # autocorrs.columns = new_columns
-
-    # # remove all the column which correspond to autocorrelation with lag=0
-    # autocorrs = autocorrs.loc[:, (autocorrs != 1).any(axis=0)]
-
-    # # change col names of our dataframe of psd
-    existing_columns = psds.columns
-    # generate a list of new column names
-    new_columns = []
-    i=1
-    n_stats = 3
-    for j,col_name in enumerate(existing_columns):
-        new_columns.append(f"{col_name}_psd{i}")
-        if ((j+1)%(n_stats)) == 0:
-            i=0
-        i+=1
-    psds.columns = new_columns
-    
-    new_df = pd.concat([magns, psds], axis=1)
-
-    return new_df
 
 ##### FUNCTIONS FOR PEAKS WAVELETS MAX COEFFICIENTS #####################################################################################
 
@@ -381,3 +374,65 @@ def acc_max_cwt(row, mother_wave):
     row = np.array(row[:400])
     max_coeff = peakes_wavelet_approx(row, mother_wave)
     return max_coeff
+
+
+##### FINAL FUNCTION FOR PREPROCESSING ################################################################################################
+
+def preproc(data, n_bins=10, precision=4):
+
+    flat_data = flatten_ts(data)
+    df, labels = vec_sum(flat_data)
+
+    mother_wave = extract_wave_df("file_csv")
+    cwt_coeff = df.apply(lambda x: acc_max_cwt(x, mother_wave), axis=1)
+
+    # group timeseries by device (accelerometer and gyroscope)
+    group_dict = {}
+    for col in df.columns:
+        # match "acc" or "gyr"
+        match = re.match("^([a-z]{3})", col)
+        group_dict[col] = match.group() if match else None
+
+    new_df = df.T.groupby(group_dict, axis=0)
+
+    # evaluate max magnitudes (intesities of the frequencies from Fourier Fast transform) for each observation for each accelerometer
+    magns = new_df.apply(lambda x: fourier_magnitudes(x, n_bins, precision))
+
+    # evaluate psd stats
+    psds = new_df.apply(psd_stats)
+
+    # adjust in DataFrame format
+    magns = adjust_df(magns)
+    psds = adjust_df(psds)
+
+    # change col names of our dataframe of magnitudes
+    existing_columns = magns.columns
+    numb = len(existing_columns)/2
+    # generate a list of new column names
+    new_columns = []
+    i=1
+    for j,col_name in enumerate(existing_columns):
+        if ((j+1)%(numb +1)) == 0:
+            i=1
+        new_columns.append(f"{col_name}_max_mag_{i}")
+        i+=1
+    magns.columns = new_columns
+
+    # change col names of our dataframe of psd
+    existing_columns = psds.columns
+    # generate a list of new column names
+    new_columns = []
+    i=1
+    n_stats = 3
+    for j,col_name in enumerate(existing_columns):
+        new_columns.append(f"{col_name}_psd{i}")
+        if ((j+1)%(n_stats)) == 0:
+            i=0
+        i+=1
+    psds.columns = new_columns
+    
+    new_df = pd.concat([magns, psds], axis=1)
+    new_df["cwt_coeff"] = cwt_coeff
+    new_df["label"] = labels
+
+    return new_df
