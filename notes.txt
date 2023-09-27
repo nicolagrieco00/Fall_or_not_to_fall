@@ -7,7 +7,7 @@ Articles for fall detection with MACHINE LEARNING:
 
 Articles for fall detection with DEEP LEARNING:
 >- the best article found!!!!!!!!!!!!!! --> https://www.mdpi.com/2076-3417/13/8/4988
->- techniques for better results---> pplying data augmentation techniques: adding gaussian noise with standard deviation to the input sequence | scaling the original sequence by a random value in the range 0.7 and 1.1 (https://www.sciencedirect.com/science/article/pii/S0169260719311770)
+>- techniques for better results---> applying data augmentation techniques: adding gaussian noise with standard deviation to the input sequence | scaling the original sequence by a random value in the range 0.7 and 1.1 (https://www.sciencedirect.com/science/article/pii/S0169260719311770)
 >- CNN+LSTM
 
 # Plots:
@@ -47,4 +47,11 @@ Articles for fall detection with DEEP LEARNING:
 
 # Further improvements:
 >-  cross-dataset classifier for fall detection which is independent of the accelerometer device, the sampling rate or the length of the sequences. 
+
+
+
+# Important points for me (Enrico):
+>- Comparison of Calibration of Classifiers -> https://scikit-learn.org/stable/auto_examples/calibration/plot_compare_calibration.html#sphx-glr-auto-examples-calibration-plot-compare-calibration-py
+>- Classifier decision boundaries comparison -> https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html#sphx-glr-auto-examples-classification-plot-classifier-comparison-py
+>- Comparing various online solvers -> https://scikit-learn.org/stable/auto_examples/linear_model/plot_sgd_comparison.html#sphx-glr-auto-examples-linear-model-plot-sgd-comparison-py
 
