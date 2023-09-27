@@ -100,12 +100,17 @@ def maxbin_plot(sampled_rows, device: str):
         num_bins = 10
         hist_counts, bin_edges = np.histogram(max_ps[0], bins=num_bins)
 
-        ax[pos[i]].plot(max_ps[0], max_ps[1], marker="o", color=color)
+        ax[pos[i]].plot(max_ps[0][1:], max_ps[1][1:], marker="o", color=color)
         ax[pos[i]].set_xlabel('Frequency')
         ax[pos[i]].set_ylabel('Power spectrum')
+        if device=="accelerometer":
+            top = max(max_ps[1][1:])+5e3
+        else:
+            top = max(max_ps[1][1:])+5e5
+        ax[pos[i]].set_ylim(top=top)
         ax[pos[i]].set_title(label[0])
         # Add transparent bands using fill_between for each bin
-        for k in range(num_bins):
+        for k in range(1, num_bins):
             lower_band = bin_edges[k]
             upper_band = bin_edges[k + 1]
             if k%2==0:
@@ -114,7 +119,7 @@ def maxbin_plot(sampled_rows, device: str):
                 ax[pos[i]].fill_betweenx([0, max(max_ps[1])], lower_band, upper_band, alpha=0.3, color='gray')
         i+=1
 
-    plt.suptitle(f'Power spectrum peaks for sample {device} signals')
+    plt.suptitle(f'Power spectrum peaks for sample {device} signals (excluded peak at freq=0)')
     plt.subplots_adjust(hspace=0.5, wspace=0.3)
     plt.delaxes(ax[pos[6]])
     plt.delaxes(ax[pos[8]])
