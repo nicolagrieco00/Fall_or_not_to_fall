@@ -372,7 +372,7 @@ def peakes_wavelet_approx(signal, mother_wave, plot=False, label=None):
 
 def acc_max_cwt(row, mother_wave):
     row = np.array(row[:400])
-    max_coeff = peakes_wavelet_approx(row, mother_wave)
+    max_coeff = abs(peakes_wavelet_approx(row, mother_wave))
     return max_coeff
 
 
