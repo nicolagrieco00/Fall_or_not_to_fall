@@ -27,17 +27,13 @@ Articles for fall detection with DEEP LEARNING:
 >- report use cases and introduce possible applications (for example the video with air bag jacket)
 
 
-# Supervised ML algorithms:
->- knn vs logistic (cap 1 ESL)
->- naive bayes vs logistic?
->- justify logistic CV results
->- try different regression splines (always ESL) and motivate the exclusion/inclusion of the model
->- announce the random forest (ensamble?) world and motivate the overperformance for the XGBoost
->- SVM???
-
-# Unsupervised algorithms -> justify our choice of classes:
->- kmeans
->- spectral clustering?
+# ML algorithms:
+>- model agnostic feature importance
+>- VIF and multicollinearity
+>- clustering/KNN for classes evaluation
+>- SVM and decision boundaries comparison of classifiers (maybe using PCA before to allow visulization)
+>- ROC and precision-recall curves comparison of classifiers
+>- calibration comparison of classifiers
 
 
 # Deepl code:
