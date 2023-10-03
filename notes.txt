@@ -29,11 +29,12 @@ Articles for fall detection with DEEP LEARNING:
 
 # ML algorithms:
 >- model agnostic feature importance
->- VIF and multicollinearity
 >- clustering/KNN for classes evaluation
 >- SVM and decision boundaries comparison of classifiers (maybe using PCA before to allow visulization)
+>- XGBoost
 >- ROC and precision-recall curves comparison of classifiers
 >- calibration comparison of classifiers
+>- final pipeline
 
 
 # Deepl code:
