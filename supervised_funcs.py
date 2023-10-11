@@ -23,8 +23,11 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 import warnings
 
+
+#### CLASSIFIERS BEST FIT ##############################################################################################################
 
 def fit_qda_model(X_train,X_test, y_train, score):
     # Scale the features (may be useful if we are going to add other features with different scales)
@@ -121,85 +124,6 @@ def fit_linear_model(X_train,X_test,y_train,loss, score):
     y_pred = best_model.predict(X_test_scaled)
 
     return(y_pred, grid_search.best_params_)
-
-
-def resampling_strategy(df, labels):
-    seed=1218
-    sm = KMeansSMOTE(kmeans_estimator= KMeans(),random_state=seed)
-    y = labels
-    X_res, y_res = sm.fit_resample(df, y)
-
-    # split data 
-    seed = 1218
-    X_train_res, X_test_res, y_train_res, y_test_res = train_test_split(X_res, y_res, test_size=0.3, random_state=seed)
-
-    # scale the features (may be useful if we are going to add other features with different scale)
-    scaler = StandardScaler()
-    X_train_res = scaler.fit_transform(X_train_res.astype(np.float64))
-    X_test_res = scaler.fit_transform(X_test_res.astype(np.float64))
-    return(X_train_res, X_test_res, y_train_res, y_test_res, y_res)
-
-
-def resampling_compare(y, y_res):
-    # Check class distribution before resampling
-    class_distribution_before = Counter(y)
-    labels_b = class_distribution_before.keys()
-    sizes_b = class_distribution_before.values()
-    total_samples_before = sum(sizes_b)
-
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
-    ax[0].pie(sizes_b, labels=labels_b, autopct='%1.1f%%', startangle=140)
-    ax[0].set_title('Class Distribution Before Resampling')
-    ax[0].text(0.5, -0.1, f'Total Samples: {total_samples_before}', size=12, ha='center', transform=ax[0].transAxes)
-
-
-
-    # Check class distribution after resampling
-    class_distribution_after = Counter(y_res)
-    labels_a = class_distribution_after.keys()
-    sizes_a = class_distribution_after.values()
-    total_samples_after = sum(sizes_a)
-
-    ax[1].pie(sizes_a, labels=labels_a, autopct='%1.1f%%', startangle=140)
-    ax[1].set_title('Class Distribution After Resampling (KMeans SMOTE)')
-    ax[1].text(0.5, -0.1, f'Total Samples: {total_samples_after}', size=12, ha='center', transform=ax[1].transAxes)
-    plt.show()
-
-
-def show_results_complete(X_test, y_test, clf_preds, clf):
-    print(classification_report(y_test, clf_preds, target_names=clf.classes_))
-    ConfusionMatrixDisplay.from_estimator(
-        clf, X_test, y_test, display_labels=clf.classes_, xticks_rotation="vertical"
-    )
-    plt.tight_layout()
-    plt.show()
-
-
-def show_results(y, fit_object):
-    # Print the best hyperparameters
-    print("Best Hyperparameters:", fit_object[1])
-    # Calculate accuracy
-    accuracy = accuracy_score(y, fit_object[0])
-    print(f"Accuracy: {accuracy:.2f}")
-
-    balanced_accuracy = balanced_accuracy_score(y, fit_object[0])
-    print(f"Balanced Accuracy: {balanced_accuracy:.2f}")
-
-    # Generate a classification report for detailed metrics
-    report = classification_report(y, fit_object[0])
-    print("Classification Report:\n", report)
-
-    # Plot the confusion matrix
-    cm = confusion_matrix(y, fit_object[0])
-    # Plot the confusion matrix with labels
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
-    plt.xlabel("Predicted Class")
-    plt.ylabel("Actual Class")
-    plt.title("Confusion Matrix")
-    plt.xticks(np.arange(len(np.unique(y))), np.unique(y), rotation=45)
-    plt.yticks(np.arange(len(np.unique(y))), np.unique(y), rotation=0)
-    plt.show()
 
 
 def best_softmax_fit(X_train, X_test, y_train, y_test):
@@ -328,6 +252,7 @@ def best_ada_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     print(f'F1-score:{f1_score(y_test_res, ab_preds, average="macro")}')
     return ab_preds, ab_clf
 
+
 def best_knn_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     knn_clf = KNeighborsClassifier()
     knn_params = {"n_neighbors": np.array(range(0,201, 5)),
@@ -344,6 +269,7 @@ def best_knn_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     print(f'Accuracy:{accuracy_score(y_test_res, knn_preds)}')
     print(f'F1-score:{f1_score(y_test_res, knn_preds, average="macro")}')
     return knn_preds, knn_clf
+
 
 def best_perc_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     perceptron_clf = Perceptron(random_state=seed, n_jobs=-1)
@@ -366,6 +292,71 @@ def best_perc_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     print(f'F1-score:{f1_score(y_test_res, perceptron_preds, average="macro")}')
     return perceptron_preds, perceptron_clf
 
+
+##### PLOTS ############################################################################################################################
+
+def resampling_compare(y, y_res):
+    # Check class distribution before resampling
+    class_distribution_before = Counter(y)
+    labels_b = class_distribution_before.keys()
+    sizes_b = class_distribution_before.values()
+    total_samples_before = sum(sizes_b)
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    ax[0].pie(sizes_b, labels=labels_b, autopct='%1.1f%%', startangle=140)
+    ax[0].set_title('Class Distribution Before Resampling')
+    ax[0].text(0.5, -0.1, f'Total Samples: {total_samples_before}', size=12, ha='center', transform=ax[0].transAxes)
+
+
+
+    # Check class distribution after resampling
+    class_distribution_after = Counter(y_res)
+    labels_a = class_distribution_after.keys()
+    sizes_a = class_distribution_after.values()
+    total_samples_after = sum(sizes_a)
+
+    ax[1].pie(sizes_a, labels=labels_a, autopct='%1.1f%%', startangle=140)
+    ax[1].set_title('Class Distribution After Resampling (KMeans SMOTE)')
+    ax[1].text(0.5, -0.1, f'Total Samples: {total_samples_after}', size=12, ha='center', transform=ax[1].transAxes)
+    plt.show()
+
+
+def show_results_complete(X_test, y_test, clf_preds, clf):
+    print(classification_report(y_test, clf_preds, target_names=clf.classes_))
+    ConfusionMatrixDisplay.from_estimator(
+        clf, X_test, y_test, display_labels=clf.classes_, xticks_rotation="vertical"
+    )
+    plt.tight_layout()
+    plt.show()
+
+
+def show_results(y, fit_object):
+    # Print the best hyperparameters
+    print("Best Hyperparameters:", fit_object[1])
+    # Calculate accuracy
+    accuracy = accuracy_score(y, fit_object[0])
+    print(f"Accuracy: {accuracy:.2f}")
+
+    balanced_accuracy = balanced_accuracy_score(y, fit_object[0])
+    print(f"Balanced Accuracy: {balanced_accuracy:.2f}")
+
+    # Generate a classification report for detailed metrics
+    report = classification_report(y, fit_object[0])
+    print("Classification Report:\n", report)
+
+    # Plot the confusion matrix
+    cm = confusion_matrix(y, fit_object[0])
+    # Plot the confusion matrix with labels
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
+    plt.xlabel("Predicted Class")
+    plt.ylabel("Actual Class")
+    plt.title("Confusion Matrix")
+    plt.xticks(np.arange(len(np.unique(y))), np.unique(y), rotation=45)
+    plt.yticks(np.arange(len(np.unique(y))), np.unique(y), rotation=0)
+    plt.show()
+
+
 def plot_feature_importance(importance,names,model_type):
 
     feature_importance = np.array(importance)
@@ -383,3 +374,20 @@ def plot_feature_importance(importance,names,model_type):
     plt.ylabel('FEATURE NAMES')
 
 
+#### PREPROCESSING ######################################################################################################################
+
+def resampling_strategy(df, labels):
+    seed=1218
+    sm = KMeansSMOTE(kmeans_estimator= KMeans(),random_state=seed)
+    y = labels
+    X_res, y_res = sm.fit_resample(df, y)
+
+    # split data 
+    seed = 1218
+    X_train_res, X_test_res, y_train_res, y_test_res = train_test_split(X_res, y_res, test_size=0.3, random_state=seed)
+
+    # scale the features (may be useful if we are going to add other features with different scale)
+    scaler = StandardScaler()
+    X_train_res = scaler.fit_transform(X_train_res.astype(np.float64))
+    X_test_res = scaler.fit_transform(X_test_res.astype(np.float64))
+    return(X_train_res, X_test_res, y_train_res, y_test_res, y_res)
