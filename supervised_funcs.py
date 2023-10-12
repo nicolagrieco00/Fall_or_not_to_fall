@@ -14,7 +14,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.cluster import KMeans
 from xgboost import XGBClassifier
 # PERFORMANCES & METRICS
-from sklearn.metrics import confusion_matrix, accuracy_score, ConfusionMatrixDisplay, classification_report, f1_score, roc_curve, auc, balanced_accuracy_score
+from sklearn.metrics import roc_curve, confusion_matrix, accuracy_score, ConfusionMatrixDisplay, classification_report, f1_score, roc_curve, auc, balanced_accuracy_score
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, RepeatedKFold, cross_val_score, cross_val_predict, RepeatedStratifiedKFold
 from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.inspection import permutation_importance
@@ -25,6 +25,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
+from collections import defaultdict
 
 
 #### CLASSIFIERS BEST FIT ##############################################################################################################
@@ -126,9 +127,12 @@ def fit_linear_model(X_train,X_test,y_train,loss, score):
     return(y_pred, grid_search.best_params_)
 
 
-def best_softmax_fit(X_train, X_test, y_train, y_test):
+def best_softmax_fit(X_train, X_test, y_train, y_test, binary=False):
     warnings.filterwarnings('ignore')
-    softmax_clf = LogisticRegression(multi_class="multinomial")
+    if binary:
+        softmax_clf = LogisticRegression()
+    else:
+        softmax_clf = LogisticRegression(multi_class="multinomial")
 
     sm_params = {"penalty": ["l1", "l2", "elasticnet", None],
                 "max_iter": np.arange(50, 1000, 100),
@@ -178,7 +182,7 @@ def best_rf_fit(X_train, X_test, y_train, y_test):
 
 def best_svm_fit(X_train, X_test, y_train, y_test):
     # SVM - remember that in this case we use one-vs-one classification scheme
-    svm_clf = SVC()
+    svm_clf = SVC(probability=True)
 
     svm_params = {"C": [1, 2, 5, 15, 25],
                 "kernel": ["linear", "poly", "rbf", "sigmoid"],
@@ -200,14 +204,21 @@ def best_svm_fit(X_train, X_test, y_train, y_test):
     return svm_preds, svm_clf
 
 
-def best_xgboost_fit(X_train, X_test, y_tr, y_te):
+def best_xgboost_fit(X_train, X_test, y_tr, y_te, binary=False):
     warnings.filterwarnings('ignore')
     seed = 1218
-    xgb_clf = XGBClassifier(
-        objective= 'multi:softmax',
-        nthread=4,
-        seed=seed
-    )
+    if binary:
+        xgb_clf = XGBClassifier(
+            objective= 'binary:logistic',
+            nthread=4,
+            seed=seed
+        )
+    else:
+        xgb_clf = XGBClassifier(
+            objective= 'multi:softmax',
+            nthread=4,
+            seed=seed
+        )
 
     xgb_params = {
         'max_depth': range(2, 10, 1),
@@ -322,6 +333,7 @@ def resampling_compare(y, y_res):
 
 
 def show_results_complete(X_test, y_test, clf_preds, clf):
+    sns.set_style("whitegrid")
     print(classification_report(y_test, clf_preds, target_names=clf.classes_))
     ConfusionMatrixDisplay.from_estimator(
         clf, X_test, y_test, display_labels=clf.classes_, xticks_rotation="vertical"
@@ -372,7 +384,38 @@ def plot_feature_importance(importance,names,model_type):
     plt.title(model_type + 'FEATURE IMPORTANCE')
     plt.xlabel('VIF')
     plt.ylabel('FEATURE NAMES')
+    plt.show()
+    
 
+def model_comparison(clf_list, X_test, y_test, le):
+    metrics = defaultdict(list)
+
+    for clf in clf_list:
+
+        y_pred = clf[1]
+        y_pred = le.transform(y_pred)
+
+        report = classification_report(y_true=y_test, y_pred=y_pred, output_dict=True)
+
+        fpr, tpr, _ = roc_curve(y_test, y_pred, drop_intermediate=False) # For micro add .ravel() to the inputs
+        roc_auc = auc(fpr, tpr)
+        metrics['model'].append(clf[2])
+        metrics['recall'].append(report['macro avg']['recall'])
+        metrics['precision'].append(report['macro avg']['precision'])
+        metrics['f1-score'].append(report['macro avg']['f1-score'])
+        metrics['accuracy'].append(report["accuracy"])
+        metrics['roc-auc'].append(roc_auc)
+
+        sns.set()
+        plt.plot(fpr,tpr)
+
+    plt.legend([clf[2] for clf in clf_list])
+    plt.title("ROC curve for selected models")
+    plt.ylabel("True positive rate")
+    plt.xlabel("False positive rate")
+    plt.show()
+
+    return metrics
 
 #### PREPROCESSING ######################################################################################################################
 
@@ -391,3 +434,47 @@ def resampling_strategy(df, labels):
     X_train_res = scaler.fit_transform(X_train_res.astype(np.float64))
     X_test_res = scaler.fit_transform(X_test_res.astype(np.float64))
     return(X_train_res, X_test_res, y_train_res, y_test_res, y_res)
+
+
+#### FINAL PIPELINE #####################################################################################################################
+
+def create_fit_pipeline(data):
+    # feature extraction and preprocessing
+    df = preproc(data, 15)
+
+    # Replace existing labels with new labels
+    label_mapping = {
+        'fall' :'fall',
+        'rfall': 'rfall',
+        'lfall': 'lfall',
+        'light': 'fall', # only collapse "light" and "fall" classes
+        'sit': 'sit',
+        'walk': 'walk',
+        'step': 'step'
+    }
+    df['label'] = df['label'].map(label_mapping)
+    y = df["label"]
+    df = df.drop("label", axis=1)
+
+    # scale, resample and split
+    X_train, X_test, y_train, y_test, _ = resampling_strategy(df, y)
+
+    # best classifier
+    rf_clf = RandomForestClassifier()
+    rf_params = {"n_estimators": [100, 200, 500, 50, 1000],
+                "criterion": ["gini", "entropy", "log_loss", None],
+                "max_depth": [None, 100, 50],
+                "bootstrap": [True, False],
+                "max_features": ["sqrt", "log2", None],
+                }
+    rf_search = RandomizedSearchCV(rf_clf, rf_params, scoring="accuracy", n_jobs=-1, cv=10, n_iter=200)
+    rf_search.fit(X_train, y_train)
+
+    # fit
+    rf_clf = rf_search.best_estimator_
+
+    # test and show performance
+    rf_preds = rf_clf.predict(X_test)
+    show_results_complete(X_test, y_test, rf_preds, rf_clf)
+
+    return rf_clf
