@@ -25,7 +25,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 
 #### CLASSIFIERS BEST FIT ##############################################################################################################
@@ -152,7 +152,7 @@ def best_softmax_fit(X_train, X_test, y_train, y_test, binary=False):
     print(f'Accuracy:{balanced_accuracy_score(y_test, softmax_preds)}')
     print(f'F1-score:{f1_score(y_test, softmax_preds, average="macro")}')
 
-    return softmax_preds, softmax_clf
+    return softmax_preds, softmax_clf, sm_search.best_params_
 
 
 def best_rf_fit(X_train, X_test, y_train, y_test):
@@ -177,7 +177,7 @@ def best_rf_fit(X_train, X_test, y_train, y_test):
     print(f'Accuracy:{accuracy_score(y_test, rf_preds)}')
     print(f'F1-score:{f1_score(y_test, rf_preds, average="macro")}')
 
-    return rf_preds, rf_clf
+    return rf_preds, rf_clf, rf_search.best_params_
 
 
 def best_svm_fit(X_train, X_test, y_train, y_test):
@@ -201,12 +201,11 @@ def best_svm_fit(X_train, X_test, y_train, y_test):
     print(f'Best parameters: {svm_search.best_params_}')
     print(f'Accuracy:{accuracy_score(y_test, svm_preds)}')
     print(f'F1-score:{f1_score(y_test, svm_preds, average="macro")}')
-    return svm_preds, svm_clf
+    return svm_preds, svm_clf, svm_search.best_params_
 
 
-def best_xgboost_fit(X_train, X_test, y_tr, y_te, binary=False):
+def best_xgboost_fit(X_train, X_test, y_tr, y_te, binary=False, seed=1218):
     warnings.filterwarnings('ignore')
-    seed = 1218
     if binary:
         xgb_clf = XGBClassifier(
             objective= 'binary:logistic',
@@ -240,10 +239,10 @@ def best_xgboost_fit(X_train, X_test, y_tr, y_te, binary=False):
     print(f'Best parameters: {xgb_search.best_params_}')
     print(f'Accuracy:{accuracy_score(y_te, xgb_preds)}')
     print(f'F1-score:{f1_score(y_te, xgb_preds, average="macro")}')
-    return xgb_preds, xgb_clf
+    return xgb_preds, xgb_clf, xgb_search.best_params_
 
 
-def best_ada_fit(X_train_res, X_test_res, y_train_res, y_test_res):
+def best_ada_fit(X_train_res, X_test_res, y_train_res, y_test_res, seed=1218):
     weak_learner = DecisionTreeClassifier(max_leaf_nodes=8)
 
     # ADA BOOST
@@ -261,7 +260,7 @@ def best_ada_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     print(f'Best parameters: {ab_search.best_params_}')
     print(f'Accuracy:{accuracy_score(y_test_res, ab_preds)}')
     print(f'F1-score:{f1_score(y_test_res, ab_preds, average="macro")}')
-    return ab_preds, ab_clf
+    return ab_preds, ab_clf, ab_search.best_params_
 
 
 def best_knn_fit(X_train_res, X_test_res, y_train_res, y_test_res):
@@ -279,10 +278,10 @@ def best_knn_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     print(f'Best parameters: {knn_search.best_params_}')
     print(f'Accuracy:{accuracy_score(y_test_res, knn_preds)}')
     print(f'F1-score:{f1_score(y_test_res, knn_preds, average="macro")}')
-    return knn_preds, knn_clf
+    return knn_preds, knn_clf, knn_search.best_params_
 
 
-def best_perc_fit(X_train_res, X_test_res, y_train_res, y_test_res):
+def best_perc_fit(X_train_res, X_test_res, y_train_res, y_test_res, seed=1218):
     perceptron_clf = Perceptron(random_state=seed, n_jobs=-1)
     perceptron_params = {"penalty": ["l2", "l1", "elasticnet"],
                 "alpha": [0.0001, 0.001, 0.01, 0.1],
@@ -301,7 +300,7 @@ def best_perc_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     print(f'Best parameters: {perceptron_search.best_params_}')
     print(f'Accuracy:{accuracy_score(y_test_res, perceptron_preds)}')
     print(f'F1-score:{f1_score(y_test_res, perceptron_preds, average="macro")}')
-    return perceptron_preds, perceptron_clf
+    return perceptron_preds, perceptron_clf, perceptron_search.best_params_
 
 
 ##### PLOTS ############################################################################################################################
@@ -419,14 +418,12 @@ def model_comparison(clf_list, X_test, y_test, le):
 
 #### PREPROCESSING ######################################################################################################################
 
-def resampling_strategy(df, labels):
-    seed=1218
+def resampling_strategy(df, labels, seed=1218):
     sm = KMeansSMOTE(kmeans_estimator= KMeans(),random_state=seed)
     y = labels
     X_res, y_res = sm.fit_resample(df, y)
 
     # split data 
-    seed = 1218
     X_train_res, X_test_res, y_train_res, y_test_res = train_test_split(X_res, y_res, test_size=0.3, random_state=seed)
 
     # scale the features (may be useful if we are going to add other features with different scale)
