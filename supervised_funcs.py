@@ -20,6 +20,7 @@ from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.inspection import permutation_importance
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 # OTHERS
+from feature_extraction import preproc
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
