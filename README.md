@@ -22,10 +22,6 @@ Reverse fall          |  Step | Fall
 
 You can find the code and additional data for feature extraction in the `feature extraction` directory.
 
-Visualize sampled signals.
-
-![nofourier](https://github.com/Engrima18/ToFall_orNot_toFall/assets/93355495/40187135-266a-4183-a6c9-12035ad1ead9)
-
 Fourier analysis of signals.
 
 | <!-- -->    | <!-- -->    | 
