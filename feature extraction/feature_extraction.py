@@ -15,12 +15,17 @@ import warnings
 
 ##### FLATTEN THE DATA SET IN AN AD HOC DATA FRAME ##########################################################################################
 
-def flatten_ts(data):
-    ''' The function flattens the signals (6 signals) belonging to the same time slot
-    to the same row in the new data frame. It returns this new dataframe with a row for
-    each flattened vector containing 6 timeseries (3 for the accelerometer and 3 for the
-    gyrocscope) of 400 values each. Then each row presents its corresponding signal label
-    '''
+def flatten_ts(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Flattens time series data into a single row per time slot.
+
+    Args:
+        data (pd.DataFrame): Dataframe containing time series data with multiple signals.
+
+    Returns:
+        pd.DataFrame: A new dataframe where each row represents a flattened vector containing 
+                      time series data for accelerometer and gyroscope.
+    """
     # every row is an observation of length 400 x 3 x 2
     # Split the list into chunks of 400 values
     chunk_size = 400
@@ -45,23 +50,66 @@ def flatten_ts(data):
 
 ######## FUNCTIONS FOR VECTORIAL SUM (INTENSITY OF VECTORS IN 3-D SPACE) ####################################################################
 
-def chunk_splitting(row, dim=2400):
+def chunk_splitting(row: pd.Series, dim: int = 2400) -> List[np.ndarray]:
+    """
+    Splits a row into chunks of a specified size.
 
-    # Split the list into chunks of 400 values
+    Args:
+        row (pd.Series): Row from a DataFrame.
+        dim (int): Total dimension to be split into chunks. Default is 2400.
+
+    Returns:
+        List[np.ndarray]: List of np.ndarray chunks.
+    """
+
     n_chunks = dim/400
     chunks = np.array_split(np.array(row.values[:len(row.values)-1], dtype=float), n_chunks)
     return chunks
 
-def acc_sum(vec):
+
+def acc_sum(vec: List[float]) -> float:
+    """
+    Calculates the vectorial sum of accelerometer readings.
+
+    Args:
+        vec (List[float]): List of accelerometer readings.
+
+    Returns:
+        float: Vectorial sum of the given readings.
+    """
+
     acc = np.sqrt(vec[0]**2 + vec[1]**2 + vec[2]**2)
     return acc
 
-def gyr_sum(vec):
+
+def gyr_sum(vec: List[float]) -> float:
+    """
+    Calculates the vectorial sum of gyroscope readings.
+
+    Args:
+        vec (List[float]): List of gyroscope readings.
+
+    Returns:
+        float: Vectorial sum of the given readings.
+    """
+
     gyr = np.sqrt(vec[3]**2 + vec[4]**2 + vec[5]**2)
     return gyr
 
 
-def vec_sum(new_data, both=True, dim=2400):
+def vec_sum(new_data: pd.DataFrame, both: bool = True, dim: int = 2400) -> Tuple[pd.DataFrame, np.ndarray]:
+    """
+    Applies vectorial sum to accelerometer and gyroscope data.
+
+    Args:
+        new_data (pd.DataFrame): Dataframe containing time series data.
+        both (bool): Flag to indicate if both accelerometer and gyroscope sums are to be calculated. Default is True.
+        dim (int): Dimension for chunk splitting. Default is 2400.
+
+    Returns:
+        Tuple[pd.DataFrame, np.ndarray]: A tuple containing the processed DataFrame and labels.
+    """
+
     df = pd.DataFrame()
     chunk_size = 400
     # horizontally split each row in timeseries of length 400
@@ -81,7 +129,17 @@ def vec_sum(new_data, both=True, dim=2400):
 ##### MOTHER WAVELET BUILDING ##########################################################################################################
 
 
-def build_auxiliary_df(df):
+def build_auxiliary_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Builds an auxiliary dataframe for further processing.
+
+    Args:
+        df (pd.DataFrame): The original dataframe.
+
+    Returns:
+        pd.DataFrame: Processed dataframe.
+    """
+
     const = 9.81
     ## Adding the genric label fall
     df["label"] = "fall"
@@ -100,14 +158,34 @@ def build_auxiliary_df(df):
     return df_new
 
 
-def find_max_peak(signal):
+def find_max_peak(signal: np.ndarray) -> pd.DataFrame:
+    """
+    Finds the maximum peak in a given signal.
+
+    Args:
+        signal (np.ndarray): The input signal array.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the maximum peak value and its index.
+    """
+
     max_value = np.max(signal)
     max_index = np.argmax(signal)
     peak_df = pd.DataFrame({"peak": [max_value], "idx": [max_index]})
     return peak_df
 
 
-def take_peak(signal):
+def take_peak(signal: np.ndarray) -> np.ndarray:
+    """
+    Extracts a segment of the signal around its maximum peak.
+
+    Args:
+        signal (np.ndarray): The input signal array.
+
+    Returns:
+        np.ndarray: A segment of the signal centered around its maximum peak.
+    """
+
      half_window = 20
      peak_df = find_max_peak(signal)
      idx = peak_df["idx"].iloc[0]
@@ -123,7 +201,17 @@ def take_peak(signal):
      return temp       
 
 
-def mean_peak_pattern(df):
+def mean_peak_pattern(df: pd.DataFrame) -> np.ndarray:
+    """
+    Calculates the mean peak pattern of time series data.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing time series data.
+
+    Returns:
+        np.ndarray: An array representing the mean peak pattern.
+    """
+
     result_dataset = pd.DataFrame()
 
     # Iterate through each row of df_FB_new and apply build_mother
@@ -135,7 +223,17 @@ def mean_peak_pattern(df):
     return result_dataset.mean(axis=0).to_numpy()
 
 
-def mother_wavelet(res: list):
+def mother_wavelet(res: List[pd.DataFrame]) -> np.ndarray:
+    """
+    Computes the mean of the mother wavelet transformations of the provided data.
+
+    Args:
+        res (List[pd.DataFrame]): List of DataFrames representing different categories of data.
+
+    Returns:
+        np.ndarray: The mean mother wavelet transformation.
+    """
+
     FF_mean = mean_peak_pattern(res[0])
     FS_mean = mean_peak_pattern(res[1])
     FB_mean = mean_peak_pattern(res[2])
@@ -146,7 +244,17 @@ def mother_wavelet(res: list):
     return np.mean([FF_mean_wave, FS_mean_wave, FB_mean_wave], axis=0)
 
 
-def extract_wave_df(dir_name):
+def extract_wave_df(dir_name: str) -> np.ndarray:
+    """
+    Extracts wavelet data from files in a specified directory.
+
+    Args:
+        dir_name (str): Name of the directory containing the files.
+
+    Returns:
+        np.ndarray: The mean wavelet data extracted from the files.
+    """
+
     # Define the directory where your files are located
     directory = os.getcwd() + f'\\{dir_name}\\'
 
@@ -212,17 +320,18 @@ def extract_wave_df(dir_name):
 
 def maxbin(row: Union[List[float], np.ndarray], plot: bool, precision: int = -1, n_bins: int = 10) -> List[float]:
     """
-    Divide the data into a specified number of bins and calculate the maximum value for each bin.
+    Calculates the maximum value in each bin of the data.
 
     Args:
-        row (list or array): The data to be divided into bins.
-        plot (boolean): flag argument to explicitly plot the results. 
-        precision (int): how many peaks close the origin you want to consider. Defaults to -1 (all over the found peaks).
-        n_bins (int, optional): The number of bins to divide the data into. Defaults to 10.
+        row (Union[List[float], np.ndarray]): Data to be binned.
+        plot (bool): Whether to plot the results.
+        precision (int): Number of peaks to consider around the origin. Default is -1 (all peaks).
+        n_bins (int): Number of bins. Default is 10.
 
     Returns:
-        list: A list containing the maximum value for each bin.
+        List[float]: Maximum value in each bin.
     """
+
     n = len(row)
     freq = list(fftfreq(n*2))
     step = n//n_bins
@@ -315,12 +424,37 @@ def adjust_df(s: pd.Series) -> pd.DataFrame:
 
 ##### FUNCTIONS FOR PEAKS WAVELETS MAX COEFFICIENTS #####################################################################################
 
-def cwt_coeff(peak_wave, mother_wave, scale, translation):
+def cwt_coeff(peak_wave: np.ndarray, mother_wave: np.ndarray, scale: float, translation: float) -> float:
+    """
+    Calculates the continuous wavelet transform coefficient for a peak wave.
+
+    Args:
+        peak_wave (np.ndarray): The peak wave array.
+        mother_wave (np.ndarray): The mother wave array.
+        scale (float): The scale factor for the wavelet transform.
+        translation (float): The translation factor for the wavelet transform.
+
+    Returns:
+        float: The continuous wavelet transform coefficient.
+    """
+
     std_mother_wave = (mother_wave - translation)/scale
     coeff = sum(peak_wave * std_mother_wave)/np.sqrt(scale)
     return coeff
 
-def max_cwt_coeff(peak_wave, mother_wave):
+
+def max_cwt_coeff(peak_wave: np.ndarray, mother_wave: np.ndarray) -> float:
+    """
+    Finds the maximum continuous wavelet transform coefficient for a given peak wave.
+
+    Args:
+        peak_wave (np.ndarray): The peak wave array.
+        mother_wave (np.ndarray): The mother wave array.
+
+    Returns:
+        float: The maximum continuous wavelet transform coefficient.
+    """
+
     max_coeff = np.NINF
     translation_vec = np.arange(10, 30, 10)
     for b in translation_vec:
@@ -329,7 +463,20 @@ def max_cwt_coeff(peak_wave, mother_wave):
             max_coeff = new_coeff
     return max_coeff
 
-def peakes_wavelet_approx(signal, mother_wave, plot=False, label=None):
+def peakes_wavelet_approx(signal: np.ndarray, mother_wave: np.ndarray, plot: bool = False, label: Optional[str] = None) -> float:
+    """
+    Approximates the wavelet of the peaks in a signal.
+
+    Args:
+        signal (np.ndarray): The signal array.
+        mother_wave (np.ndarray): The mother wave array.
+        plot (bool): Flag to plot the results. Default is False.
+        label (Optional[str]): Optional label for plotting. Default is None.
+
+    Returns:
+        float: The wavelet approximation of the peaks.
+    """
+
     half_window = 20 # number of sampled values in our data collection in 2 seconds of time
     threshold = 1.9 * 9.81 
     peaks = signal[signal >= threshold]
@@ -370,7 +517,18 @@ def peakes_wavelet_approx(signal, mother_wave, plot=False, label=None):
         plt.show()
     return max_cwt
 
-def acc_max_cwt(row, mother_wave):
+def acc_max_cwt(row: Union[List[float], np.ndarray], mother_wave: np.ndarray) -> float:
+    """
+    Calculates the maximum continuous wavelet transform coefficient for accelerometer data.
+
+    Args:
+        row (Union[List[float], np.ndarray]): The accelerometer data.
+        mother_wave (np.ndarray): The mother wave array.
+
+    Returns:
+        float: The maximum continuous wavelet transform coefficient for the given data.
+    """
+
     row = np.array(row[:400])
     max_coeff = abs(peakes_wavelet_approx(row, mother_wave))
     return max_coeff
@@ -378,7 +536,19 @@ def acc_max_cwt(row, mother_wave):
 
 ##### FINAL FUNCTION FOR PREPROCESSING ################################################################################################
 
-def preproc(data, n_bins=10, precision=4):
+def preproc(data: pd.DataFrame, n_bins: int = 10, precision: int = 4) -> pd.DataFrame:
+    """
+    Performs preprocessing on the given data including flattening, vector sums, Fourier transforms, and more.
+
+    Args:
+        data (pd.DataFrame): The input dataframe.
+        n_bins (int): Number of bins for the Fourier transforms. Default is 10.
+        precision (int): Precision for the Fourier transforms. Default is 4.
+
+    Returns:
+        pd.DataFrame: The preprocessed dataframe.
+    """
+
 
     flat_data = flatten_ts(data)
     df, labels = vec_sum(flat_data)

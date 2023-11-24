@@ -7,7 +7,16 @@ import seaborn as sns
 from scipy.signal import cwt, morlet
 
 
-def signal_plot(sampled_rows):
+def signal_plot(sampled_rows: pd.DataFrame) -> None:
+    """
+    Plots accelerometer and gyroscope signals from sampled rows of data.
+
+    Args:
+        sampled_rows (pd.DataFrame): DataFrame containing sampled rows of signals.
+
+    Returns:
+        None
+    """
     fig, ax = plt.subplots(3, 3, figsize=(13,8))
     pos = {0: (0, 0), 1: (0, 1), 2: (0, 2), 3: (1, 0), 4: (1, 1), 5: (1, 2), 6: (2, 0), 7: (2, 1), 8: (2, 2)}
     i=0
@@ -42,7 +51,18 @@ def signal_plot(sampled_rows):
     return None
 
 
-def fft_plot(sampled_rows, device: str):
+def fft_plot(sampled_rows: pd.DataFrame, device: str) -> None:
+    """
+    Plots the Fast Fourier Transform (FFT) magnitude for sampled rows of a specific device.
+
+    Args:
+        sampled_rows (pd.DataFrame): DataFrame containing sampled rows of signals.
+        device (str): The device type ('accelerometer' or 'gyroscope').
+
+    Returns:
+        None
+    """
+
     sns.set_style("whitegrid")
     fig, ax = plt.subplots(3, 3, figsize=(13,8))
     pos = {0: (0, 0), 1: (0, 1), 2: (0, 2), 3: (1, 0), 4: (1, 1), 5: (1, 2), 6: (2, 0), 7: (2, 1), 8: (2, 2)}
@@ -78,7 +98,18 @@ def fft_plot(sampled_rows, device: str):
     return None
 
 
-def maxbin_plot(sampled_rows, device: str):
+def maxbin_plot(sampled_rows: pd.DataFrame, device: str) -> None:
+    """
+    Plots the power spectrum peaks for sampled rows of a specific device.
+
+    Args:
+        sampled_rows (pd.DataFrame): DataFrame containing sampled rows of signals.
+        device (str): The device type ('accelerometer' or 'gyroscope').
+
+    Returns:
+        None
+    """
+
     sns.set_style("ticks")
     fig, ax = plt.subplots(3, 3, figsize=(13,8))
     pos = {0: (0, 0), 1: (0, 1), 2: (0, 2), 3: (1, 0), 4: (1, 1), 5: (1, 2), 6: (2, 0), 7: (2, 1), 8: (2, 2)}
@@ -128,7 +159,17 @@ def maxbin_plot(sampled_rows, device: str):
     return None
 
 
-def cwt_plot(sampled_rows):
+def cwt_plot(sampled_rows: pd.DataFrame) -> None:
+    """
+    Plots the Continuous Wavelet Transform (CWT) for sampled accelerometer signals.
+
+    Args:
+        sampled_rows (pd.DataFrame): DataFrame containing sampled rows of accelerometer signals.
+
+    Returns:
+        None
+    """
+
     sns.set_style("ticks")
     fig, ax = plt.subplots(3, 3, figsize=(13,8))
     pos = {0: (0, 0), 1: (0, 1), 2: (0, 2), 3: (1, 0), 4: (1, 1), 5: (1, 2), 6: (2, 0), 7: (2, 1), 8: (2, 2)}

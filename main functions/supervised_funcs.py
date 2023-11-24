@@ -31,7 +31,20 @@ from collections import defaultdict, Counter
 
 #### CLASSIFIERS BEST FIT ##############################################################################################################
 
-def fit_qda_model(X_train,X_test, y_train, score):
+def fit_qda_model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Series, score: str) -> Tuple[np.ndarray, dict]:
+    """
+    Fits a Quadratic Discriminant Analysis (QDA) model and returns predictions and best parameters.
+
+    Args:
+        X_train (pd.DataFrame): Training feature set.
+        X_test (pd.DataFrame): Test feature set.
+        y_train (pd.Series): Training target values.
+        score (str): Scoring method to use.
+
+    Returns:
+        Tuple[np.ndarray, dict]: Predictions for the test set and the best hyperparameters.
+    """
+
     # Scale the features (may be useful if we are going to add other features with different scales)
     scaler = StandardScaler()
     #X = scaler.fit_transform(X.astype(np.float64))
@@ -61,7 +74,20 @@ def fit_qda_model(X_train,X_test, y_train, score):
     return y_pred, grid_search.best_params_
 
 
-def fit_lda_model(X_train,X_test, y_train, score):
+def fit_lda_model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Series, score: str) -> Tuple[np.ndarray, dict]:
+    """
+    Fits a Linear Discriminant Analysis (LDA) model and returns predictions and best parameters.
+
+    Args:
+        X_train (pd.DataFrame): Training feature set.
+        X_test (pd.DataFrame): Test feature set.
+        y_train (pd.Series): Training target values.
+        score (str): Scoring method to use.
+
+    Returns:
+        Tuple[np.ndarray, dict]: Predictions for the test set and the best hyperparameters.
+    """
+
     # Scale the features (may be useful if we are going to add other features with different scales)
     scaler = StandardScaler()
     #X = scaler.fit_transform(X.astype(np.float64))
@@ -94,7 +120,21 @@ def fit_lda_model(X_train,X_test, y_train, score):
     return y_pred, grid_search.best_params_
 
 
-def fit_linear_model(X_train,X_test,y_train,loss, score):
+def fit_linear_model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Series, loss: str, score: str) -> Tuple[np.ndarray, dict]:
+    """
+    Fits a linear model using Stochastic Gradient Descent and returns predictions and best parameters.
+
+    Args:
+        X_train (pd.DataFrame): Training feature set.
+        X_test (pd.DataFrame): Test feature set.
+        y_train (pd.Series): Training target values.
+        loss (str): The loss function to use.
+        score (str): Scoring method to use.
+
+    Returns:
+        Tuple[np.ndarray, dict]: Predictions for the test set and the best hyperparameters.
+    """
+
     # Scale the features (may be useful if we are going to add other features with different scales)
     scaler = StandardScaler()
     #X = scaler.fit_transform(X.astype(np.float64))
@@ -128,7 +168,21 @@ def fit_linear_model(X_train,X_test,y_train,loss, score):
     return(y_pred, grid_search.best_params_)
 
 
-def best_softmax_fit(X_train, X_test, y_train, y_test, binary=False):
+def best_softmax_fit(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series, binary: bool = False) -> Tuple[np.ndarray, LogisticRegression, dict]:
+    """
+    Fits a Softmax Regression model (Logistic Regression) and returns predictions, the fitted model, and best parameters.
+
+    Args:
+        X_train (pd.DataFrame): Training feature set.
+        X_test (pd.DataFrame): Test feature set.
+        y_train (pd.Series): Training target values.
+        y_test (pd.Series): Test target values.
+        binary (bool): Flag to indicate if the problem is binary classification. Default is False.
+
+    Returns:
+        Tuple[np.ndarray, LogisticRegression, dict]: Predictions, the fitted model, and the best hyperparameters.
+    """
+
     warnings.filterwarnings('ignore')
     if binary:
         softmax_clf = LogisticRegression()
@@ -156,7 +210,20 @@ def best_softmax_fit(X_train, X_test, y_train, y_test, binary=False):
     return softmax_preds, softmax_clf, sm_search.best_params_
 
 
-def best_rf_fit(X_train, X_test, y_train, y_test):
+def best_rf_fit(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> Tuple[np.ndarray, RandomForestClassifier, dict]:
+    """
+    Fits a Random Forest Classifier and returns predictions, the fitted model, and best parameters.
+
+    Args:
+        X_train (pd.DataFrame): Training feature set.
+        X_test (pd.DataFrame): Test feature set.
+        y_train (pd.Series): Training target values.
+        y_test (pd.Series): Test target values.
+
+    Returns:
+        Tuple[np.ndarray, RandomForestClassifier, dict]: Predictions, the fitted model, and the best hyperparameters.
+    """
+
     rf_clf = RandomForestClassifier()
 
     rf_params = {"n_estimators": [100, 200, 500, 50, 1000],
@@ -181,7 +248,20 @@ def best_rf_fit(X_train, X_test, y_train, y_test):
     return rf_preds, rf_clf, rf_search.best_params_
 
 
-def best_svm_fit(X_train, X_test, y_train, y_test):
+def best_svm_fit(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series) -> Tuple[np.ndarray, SVC, dict]:
+    """
+    Fits a Support Vector Machine (SVM) classifier and returns predictions, the fitted model, and best parameters.
+
+    Args:
+        X_train (pd.DataFrame): Training feature set.
+        X_test (pd.DataFrame): Test feature set.
+        y_train (pd.Series): Training target values.
+        y_test (pd.Series): Test target values.
+
+    Returns:
+        Tuple[np.ndarray, SVC, dict]: Predictions, the fitted model, and the best hyperparameters.
+    """
+
     # SVM - remember that in this case we use one-vs-one classification scheme
     svm_clf = SVC(probability=True)
 
@@ -205,7 +285,22 @@ def best_svm_fit(X_train, X_test, y_train, y_test):
     return svm_preds, svm_clf, svm_search.best_params_
 
 
-def best_xgboost_fit(X_train, X_test, y_tr, y_te, binary=False, seed=1218):
+def best_xgboost_fit(X_train: pd.DataFrame, X_test: pd.DataFrame, y_tr: pd.Series, y_te: pd.Series, binary: bool = False, seed: int = 1218) -> Tuple[np.ndarray, XGBClassifier, dict]:
+    """
+    Fits an XGBoost Classifier and returns predictions, the fitted model, and best parameters.
+
+    Args:
+        X_train (pd.DataFrame): Training feature set.
+        X_test (pd.DataFrame): Test feature set.
+        y_tr (pd.Series): Training target values.
+        y_te (pd.Series): Test target values.
+        binary (bool): Flag to indicate if the problem is binary classification. Default is False.
+        seed (int): Random seed for reproducibility. Default is 1218.
+
+    Returns:
+        Tuple[np.ndarray, XGBClassifier, dict]: Predictions, the fitted model, and the best hyperparameters.
+    """
+
     warnings.filterwarnings('ignore')
     if binary:
         xgb_clf = XGBClassifier(
@@ -243,7 +338,21 @@ def best_xgboost_fit(X_train, X_test, y_tr, y_te, binary=False, seed=1218):
     return xgb_preds, xgb_clf, xgb_search.best_params_
 
 
-def best_ada_fit(X_train_res, X_test_res, y_train_res, y_test_res, seed=1218):
+def best_ada_fit(X_train_res: pd.DataFrame, X_test_res: pd.DataFrame, y_train_res: pd.Series, y_test_res: pd.Series, seed: int = 1218) -> Tuple[np.ndarray, AdaBoostClassifier, dict]:
+    """
+    Fits an AdaBoost Classifier and returns predictions, the fitted model, and best parameters.
+
+    Args:
+        X_train_res (pd.DataFrame): Resampled training feature set.
+        X_test_res (pd.DataFrame): Resampled test feature set.
+        y_train_res (pd.Series): Resampled training target values.
+        y_test_res (pd.Series): Resampled test target values.
+        seed (int): Random seed for reproducibility. Default is 1218.
+
+    Returns:
+        Tuple[np.ndarray, AdaBoostClassifier, dict]: Predictions, the fitted model, and the best hyperparameters.
+    """
+
     weak_learner = DecisionTreeClassifier(max_leaf_nodes=8)
 
     # ADA BOOST
@@ -264,7 +373,20 @@ def best_ada_fit(X_train_res, X_test_res, y_train_res, y_test_res, seed=1218):
     return ab_preds, ab_clf, ab_search.best_params_
 
 
-def best_knn_fit(X_train_res, X_test_res, y_train_res, y_test_res):
+def best_knn_fit(X_train_res: pd.DataFrame, X_test_res: pd.DataFrame, y_train_res: pd.Series, y_test_res: pd.Series) -> Tuple[np.ndarray, KNeighborsClassifier, dict]:
+    """
+    Fits a K-Nearest Neighbors Classifier and returns predictions, the fitted model, and best parameters.
+
+    Args:
+        X_train_res (pd.DataFrame): Resampled training feature set.
+        X_test_res (pd.DataFrame): Resampled test feature set.
+        y_train_res (pd.Series): Resampled training target values.
+        y_test_res (pd.Series): Resampled test target values.
+
+    Returns:
+        Tuple[np.ndarray, KNeighborsClassifier, dict]: Predictions, the fitted model, and the best hyperparameters.
+    """
+
     knn_clf = KNeighborsClassifier()
     knn_params = {"n_neighbors": np.array(range(0,201, 5)),
                 "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
@@ -282,7 +404,21 @@ def best_knn_fit(X_train_res, X_test_res, y_train_res, y_test_res):
     return knn_preds, knn_clf, knn_search.best_params_
 
 
-def best_perc_fit(X_train_res, X_test_res, y_train_res, y_test_res, seed=1218):
+def best_perc_fit(X_train_res: pd.DataFrame, X_test_res: pd.DataFrame, y_train_res: pd.Series, y_test_res: pd.Series, seed: int = 1218) -> Tuple[np.ndarray, Perceptron, dict]:
+    """
+    Fits a Perceptron classifier and returns predictions, the fitted model, and best parameters.
+
+    Args:
+        X_train_res (pd.DataFrame): Resampled training feature set.
+        X_test_res (pd.DataFrame): Resampled test feature set.
+        y_train_res (pd.Series): Resampled training target values.
+        y_test_res (pd.Series): Resampled test target values.
+        seed (int): Random seed for reproducibility. Default is 1218.
+
+    Returns:
+        Tuple[np.ndarray, Perceptron, dict]: Predictions, the fitted model, and the best hyperparameters.
+    """
+
     perceptron_clf = Perceptron(random_state=seed, n_jobs=-1)
     perceptron_params = {"penalty": ["l2", "l1", "elasticnet"],
                 "alpha": [0.0001, 0.001, 0.01, 0.1],
@@ -306,7 +442,18 @@ def best_perc_fit(X_train_res, X_test_res, y_train_res, y_test_res, seed=1218):
 
 ##### PLOTS ############################################################################################################################
 
-def resampling_compare(y, y_res):
+def resampling_compare(y: pd.Series, y_res: pd.Series) -> None:
+    """
+    Compares class distribution before and after resampling using pie charts.
+
+    Args:
+        y (pd.Series): Original target values.
+        y_res (pd.Series): Resampled target values.
+
+    Returns:
+        None
+    """
+
     # Check class distribution before resampling
     class_distribution_before = Counter(y)
     labels_b = class_distribution_before.keys()
@@ -332,7 +479,20 @@ def resampling_compare(y, y_res):
     plt.show()
 
 
-def show_results_complete(X_test, y_test, clf_preds, clf):
+def show_results_complete(X_test: pd.DataFrame, y_test: pd.Series, clf_preds: np.ndarray, clf) -> None:
+    """
+    Displays the classification report and confusion matrix for a classifier's predictions.
+
+    Args:
+        X_test (pd.DataFrame): Test feature set.
+        y_test (pd.Series): True target values.
+        clf_preds (np.ndarray): Predictions made by the classifier.
+        clf: The trained classifier model.
+
+    Returns:
+        None
+    """
+
     sns.set_style("whitegrid")
     print(classification_report(y_test, clf_preds, target_names=clf.classes_))
     ConfusionMatrixDisplay.from_estimator(
@@ -342,7 +502,18 @@ def show_results_complete(X_test, y_test, clf_preds, clf):
     plt.show()
 
 
-def show_results(y, fit_object):
+def show_results(y: pd.Series, fit_object: Tuple[np.ndarray, dict]) -> None:
+    """
+    Displays performance metrics and the confusion matrix for given predictions.
+
+    Args:
+        y (pd.Series): True target values.
+        fit_object (Tuple[np.ndarray, dict]): Tuple containing predictions and best hyperparameters.
+
+    Returns:
+        None
+    """
+
     # Print the best hyperparameters
     print("Best Hyperparameters:", fit_object[1])
     # Calculate accuracy
@@ -369,7 +540,18 @@ def show_results(y, fit_object):
     plt.show()
 
 
-def plot_feature_importance(importance,names,model_type):
+def plot_feature_importance(importance: np.ndarray, names: List[str], model_type: str) -> None:
+    """
+    Plots the feature importances of a model.
+
+    Args:
+        importance (np.ndarray): Array of feature importances.
+        names (List[str]): List of feature names.
+        model_type (str): Type of the model.
+
+    Returns:
+        None
+    """
 
     feature_importance = np.array(importance)
     feature_names = np.array(names)
@@ -387,7 +569,20 @@ def plot_feature_importance(importance,names,model_type):
     plt.show()
     
 
-def model_comparison(clf_list, X_test, y_test, le):
+def model_comparison(clf_list: List[Tuple], X_test: pd.DataFrame, y_test: pd.Series, le: LabelEncoder) -> dict:
+    """
+    Compares different classifiers by plotting ROC curves and compiling performance metrics.
+
+    Args:
+        clf_list (List[Tuple]): List of tuples containing classifier predictions and model names.
+        X_test (pd.DataFrame): Test feature set.
+        y_test (pd.Series): True target values.
+        le (LabelEncoder): Label encoder used for encoding target values.
+
+    Returns:
+        dict: Dictionary containing performance metrics for each model.
+    """
+
     metrics = defaultdict(list)
 
     for clf in clf_list:
@@ -419,7 +614,19 @@ def model_comparison(clf_list, X_test, y_test, le):
 
 #### PREPROCESSING ######################################################################################################################
 
-def resampling_strategy(df, labels, seed=1218):
+def resampling_strategy(df: pd.DataFrame, labels: pd.Series, seed: int = 1218) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+    """
+    Applies resampling strategy to the dataset and splits it into training and testing sets.
+
+    Args:
+        df (pd.DataFrame): Feature set.
+        labels (pd.Series): Target values.
+        seed (int): Random seed for reproducibility. Default is 1218.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]: Resampled and split training and testing feature sets and target values.
+    """
+
     sm = KMeansSMOTE(kmeans_estimator= KMeans(),random_state=seed)
     y = labels
     X_res, y_res = sm.fit_resample(df, y)
@@ -436,7 +643,14 @@ def resampling_strategy(df, labels, seed=1218):
 
 #### FINAL PIPELINE #####################################################################################################################
 
-def create_fit_pipeline(data):
+def create_fit_pipeline(data: pd.DataFrame) -> RandomForestClassifier:
+    """
+    Creates, fits, and evaluates a pipeline for data preprocessing, model training, and performance assessment.
+
+    Args:
+        data (pd.DataFrame
+    """
+    
     # feature extraction and preprocessing
     df = preproc(data, 15)
 
