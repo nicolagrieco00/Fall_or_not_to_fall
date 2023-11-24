@@ -645,12 +645,15 @@ def resampling_strategy(df: pd.DataFrame, labels: pd.Series, seed: int = 1218) -
 
 def create_fit_pipeline(data: pd.DataFrame) -> RandomForestClassifier:
     """
-    Creates, fits, and evaluates a pipeline for data preprocessing, model training, and performance assessment.
+    Creates and fits a pipeline involving preprocessing, feature extraction, resampling, and classification using a Random Forest Classifier.
 
     Args:
-        data (pd.DataFrame
+        data (pd.DataFrame): The input data to be processed and classified.
+
+    Returns:
+        RandomForestClassifier: The trained Random Forest Classifier.
     """
-    
+
     # feature extraction and preprocessing
     df = preproc(data, 15)
 
